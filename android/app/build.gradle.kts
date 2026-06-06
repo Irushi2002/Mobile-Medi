@@ -1,21 +1,25 @@
-﻿plugins {
+plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
+
 android {
     namespace = "com.example.medicinnect"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
         isCoreLibraryDesugaringEnabled = true
     }
+
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = "1.8"
     }
+
     defaultConfig {
         applicationId = "com.example.medicinnect"
         minSdk = 23
@@ -24,6 +28,7 @@ android {
         versionName = flutter.versionName
         multiDexEnabled = true
     }
+
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
@@ -32,11 +37,15 @@ android {
         }
     }
 }
+
 flutter {
     source = "../.."
 }
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.23")
     implementation("androidx.multidex:multidex:2.0.1")
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    implementation("com.google.firebase:firebase-analytics")
 }
