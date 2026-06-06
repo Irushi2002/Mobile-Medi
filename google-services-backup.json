@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "27363179803",
+    "project_id": "medicinnect",
+    "storage_bucket": "medicinnect.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:27363179803:android:fef0214d05eed5be36a7be",
+        "android_client_info": {
+          "package_name": "com.example.medicinnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9JQRqMgTaBihsyILo70FNhTyVPiAru4I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
