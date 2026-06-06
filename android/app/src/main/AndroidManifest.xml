@@ -30,7 +30,10 @@
             android:windowSoftInputMode="adjustResize">
 
             <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
+            android:name="flutterEmbedding"
+            android:value="2"/>
+        <meta-data
+            android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"/>
 
             <intent-filter>
