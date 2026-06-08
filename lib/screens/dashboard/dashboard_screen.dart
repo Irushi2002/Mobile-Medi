@@ -36,16 +36,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
     for (final med in medications) {
       if (!med.isScheduledForDate(now)) continue;
       for (final t in med.scheduledTimes) {
-        final todayTime = DateTime(now.year, now.month, now.day, t.hour, t.minute);
+        final todayTime =
+        DateTime(now.year, now.month, now.day, t.hour, t.minute);
         final timeKey =
             '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-        final status = med.takenStatus[timeKey] ?? MedicationStatus.pending;
+        final status =
+            med.takenStatus[timeKey] ?? MedicationStatus.pending;
         entries.add(_ScheduledMedEntry(
-            medication: med, scheduledTime: todayTime, status: status, timeKey: timeKey));
+            medication: med,
+            scheduledTime: todayTime,
+            status: status,
+            timeKey: timeKey));
       }
     }
     entries.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
     return entries;
+  }
+
+  // Find next upcoming (non-overdue) medication
+  _ScheduledMedEntry? _getNextMedication(
+      List<_ScheduledMedEntry> entries) {
+    final now = DateTime.now();
+    for (final e in entries) {
+      if (e.status == MedicationStatus.pending &&
+          e.scheduledTime.isAfter(now)) {
+        return e;
+      }
+    }
+    return null;
+  }
+
+  // Find current overdue medications (before next dose)
+  List<_ScheduledMedEntry> _getOverdueMeds(
+      List<_ScheduledMedEntry> entries) {
+    final now = DateTime.now();
+    final overdue = <_ScheduledMedEntry>[];
+    for (int i = 0; i < entries.length; i++) {
+      final e = entries[i];
+      if (e.status == MedicationStatus.overdue) {
+        // Show until next dose time
+        DateTime? nextDoseTime;
+        for (int j = i + 1; j < entries.length; j++) {
+          if (entries[j].medication.id == e.medication.id) {
+            nextDoseTime = entries[j].scheduledTime;
+            break;
+          }
+        }
+        // If no next dose today, show until end of day
+        final showUntil =
+            nextDoseTime ?? DateTime(now.year, now.month, now.day, 23, 59);
+        if (now.isBefore(showUntil)) {
+          overdue.add(e);
+        }
+      }
+    }
+    return overdue;
   }
 
   @override
@@ -54,14 +99,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final medProvider = context.watch<MedicationProvider>();
     final user = auth.user;
     final entries = _getTodayEntries(medProvider.medications);
-    final nextMedTime = medProvider.nextMedicationTime;
+    final nextMed = _getNextMedication(entries);
+    final overdueMeds = _getOverdueMeds(entries);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Header ──────────────────────────────────────────────────────
+            // ── Header ──────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Container(
                 color: AppColors.surface,
@@ -90,7 +136,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
+                            DateFormat('EEEE, d MMMM yyyy')
+                                .format(DateTime.now()),
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.textHint,
@@ -104,7 +151,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Navigator.pushNamed(context, AppRouter.profile),
                       child: CircleAvatar(
                         radius: 22,
-                        backgroundColor: AppColors.primaryLight.withOpacity(0.15),
+                        backgroundColor:
+                        AppColors.primaryLight.withOpacity(0.15),
                         backgroundImage: user?.photoUrl != null
                             ? NetworkImage(user!.photoUrl!)
                             : null,
@@ -121,7 +169,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            // ── Today's Medication Banner ────────────────────────────────────
+            // ── Overdue Banner (shown in RED until next dose) ────────
+            if (overdueMeds.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Column(
+                    children: overdueMeds.map((e) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.overdue.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: AppColors.overdue.withOpacity(0.4),
+                              width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.overdue.withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.medication_rounded,
+                                  color: AppColors.overdue, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    e.medication.name,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.overdue,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${e.medication.dosage} — missed at ${_fmtTime(e.scheduledTime)}',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.overdue),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            CountdownTimer(
+                              targetTime: e.scheduledTime,
+                              isOverdue: true,
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
+            // ── Today's Medication Banner ────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -151,18 +262,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              medProvider.nextMedication?.name ??
-                                  'All caught up!',
+                              nextMed?.medication.name ?? 'All caught up!',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            if (medProvider.nextMedication != null) ...[
+                            if (nextMed != null) ...[
                               const SizedBox(height: 2),
                               Text(
-                                medProvider.nextMedication!.dosage,
+                                nextMed.medication.dosage,
                                 style: const TextStyle(
                                     color: Colors.white70, fontSize: 13),
                               ),
@@ -170,7 +280,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                       ),
-                      if (nextMedTime != null)
+                      if (nextMed != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -181,7 +291,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             CountdownTimer(
-                              targetTime: nextMedTime,
+                              targetTime: nextMed.scheduledTime,
+                              isOverdue: false,
                             ),
                           ],
                         )
@@ -196,7 +307,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-            // ── Quick Actions ──────────────────────────────────────────────
+            // ── Quick Actions ──────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -232,7 +343,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-            // ── Today's Schedule ───────────────────────────────────────────
+            // ── Today's Schedule ───────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -248,8 +359,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, AppRouter.myMedication),
+                      onPressed: () => Navigator.pushNamed(
+                          context, AppRouter.myMedication),
                       child: const Text('View All',
                           style: TextStyle(color: AppColors.primary)),
                     ),
@@ -308,6 +419,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (hour < 12) return 'Morning';
     if (hour < 17) return 'Afternoon';
     return 'Evening';
+  }
+
+  String _fmtTime(DateTime dt) {
+    final hour =
+    dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final period = dt.hour >= 12 ? 'PM' : 'AM';
+    final min = dt.minute.toString().padLeft(2, '0');
+    return '$hour:$min $period';
   }
 }
 

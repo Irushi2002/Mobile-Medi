@@ -24,18 +24,16 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    _fadeAnimation =
-        Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
-          parent: _controller,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
-        ));
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+    ));
     _scaleAnimation =
         Tween<double>(begin: 0.8, end: 1).animate(CurvedAnimation(
           parent: _controller,
           curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
         ));
     _controller.forward();
-
     Future.delayed(const Duration(seconds: 2), _navigate);
   }
 
@@ -85,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    'MediCinnect',
+                    'MediHub',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 32,

@@ -12,22 +12,8 @@ class PrivacyPolicyScreen extends StatefulWidget {
 }
 
 class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
-  bool _hasScrolledToBottom = false;
   bool _accepted = false;
   final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 50) {
-        if (!_hasScrolledToBottom) {
-          setState(() => _hasScrolledToBottom = true);
-        }
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -78,12 +64,11 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Please read our Privacy Policy carefully before using MediCinnect.',
+                            'Please read our Privacy Policy carefully before using MediHub.',
                             style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 13,
-                              height: 1.4,
-                            ),
+                                color: AppColors.primary,
+                                fontSize: 13,
+                                height: 1.4),
                           ),
                         ),
                       ],
@@ -103,10 +88,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                     child: const Text(
                       'You have read the full Privacy Policy. You may now accept to continue.',
                       style: TextStyle(
-                        color: AppColors.stable,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
+                          color: AppColors.stable,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -117,8 +101,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              border:
-              Border(top: BorderSide(color: AppColors.border)),
+              border: Border(top: BorderSide(color: AppColors.border)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),
@@ -131,7 +114,8 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
               children: [
                 CheckboxListTile(
                   value: _accepted,
-                  onChanged: (val) => setState(() => _accepted = val ?? false),
+                  onChanged: (val) =>
+                      setState(() => _accepted = val ?? false),
                   title: const Text(
                     'I have read and agree to the Privacy Policy and Terms of Service',
                     style: TextStyle(
@@ -159,7 +143,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       {
         'title': '1. Information We Collect',
         'content':
-        'MediCinnect collects personal health information including your name, email address, medication schedules, appointment records, and daily health check-in data. This information is collected solely for the purpose of providing healthcare management services.'
+        'MediHub collects personal health information including your name, email address, medication schedules, appointment records, and daily health check-in data. This information is collected solely for the purpose of providing healthcare management services.'
       },
       {
         'title': '2. How We Use Your Information',
@@ -174,48 +158,41 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       {
         'title': '4. Data Sharing',
         'content':
-        'Health data including daily check-ins and symptom reports is shared with your registered medical team through the MediCinnect hospital portal. You consent to this sharing by using this application.'
+        'Health data including daily check-ins and symptom reports is shared with your registered medical team through the MediHub hospital portal. You consent to this sharing by using this application.'
       },
       {
         'title': '5. Notifications',
         'content':
-        'MediCinnect sends push notifications for medication reminders and daily check-in prompts. You can manage notification preferences in your device settings.'
+        'MediHub sends push notifications for medication reminders and daily check-in prompts. You can manage notification preferences in your device settings.'
       },
       {
         'title': '6. Your Rights',
         'content':
-        'You have the right to access, correct, or request deletion of your personal data. Contact our support team at support@medicinnect.lk for any data-related requests.'
+        'You have the right to access, correct, or request deletion of your personal data. Contact our support team at support@medihub.lk for any data-related requests.'
       },
       {
         'title': '7. Contact Us',
         'content':
-        'If you have questions about this Privacy Policy, contact us at support@medicinnect.lk or call +94 11 234 5678.'
+        'If you have questions about this Privacy Policy, contact us at support@medihub.lk or call +94 11 234 5678.'
       },
     ];
-
     return sections.map((s) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              s['title']!,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            Text(s['title']!,
+                style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary)),
             const SizedBox(height: 6),
-            Text(
-              s['content']!,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.6,
-              ),
-            ),
+            Text(s['content']!,
+                style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.6)),
           ],
         ),
       );
