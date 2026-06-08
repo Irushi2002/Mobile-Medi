@@ -23,8 +23,11 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
   final Set<String> _selectedSymptoms = {};
   HealthStatus _healthStatus = HealthStatus.stable;
   bool _isLoading = false;
-  bool _alreadySubmitted = false;
   bool _isChecking = true;
+
+  // Edit mode support
+  CheckInModel? _existingCheckIn;
+  bool _isEditMode = false;
 
   @override
   void initState() {
@@ -37,8 +40,31 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
     if (uid == null) return;
     final existing = await _service.getTodayCheckIn(uid);
     setState(() {
-      _alreadySubmitted = existing != null;
+      _existingCheckIn = existing;
       _isChecking = false;
+      if (existing != null) {
+        // Pre-fill the form with existing data for editing
+        _selectedSymptoms.addAll(existing.symptoms);
+        _healthStatus = existing.healthStatus;
+        _notesController.text = existing.additionalNotes ?? '';
+      }
+    });
+  }
+
+  void _enterEditMode() {
+    setState(() => _isEditMode = true);
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      _isEditMode = false;
+      // Reset to existing values
+      _selectedSymptoms.clear();
+      if (_existingCheckIn != null) {
+        _selectedSymptoms.addAll(_existingCheckIn!.symptoms);
+        _healthStatus = _existingCheckIn!.healthStatus;
+        _notesController.text = _existingCheckIn!.additionalNotes ?? '';
+      }
     });
   }
 
@@ -61,35 +87,63 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
   Future<void> _submit() async {
     final uid = context.read<AuthProvider>().user?.uid;
     if (uid == null) return;
-
     setState(() => _isLoading = true);
 
-    final checkIn = CheckInModel(
-      id: '',
-      userId: uid,
-      date: DateTime.now(),
-      symptoms: _selectedSymptoms.toList(),
-      healthStatus: _healthStatus,
-      additionalNotes: _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
-      submittedToDoctor: true,
-    );
-
-    await _service.submitCheckIn(checkIn);
-
-    if (!mounted) return;
-    setState(() {
-      _isLoading = false;
-      _alreadySubmitted = true;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Check-in submitted to your doctor'),
-        backgroundColor: AppColors.stable,
-      ),
-    );
+    if (_isEditMode && _existingCheckIn != null) {
+      // Update existing check-in
+      final updated = CheckInModel(
+        id: _existingCheckIn!.id,
+        userId: uid,
+        date: _existingCheckIn!.date,
+        symptoms: _selectedSymptoms.toList(),
+        healthStatus: _healthStatus,
+        additionalNotes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+        submittedToDoctor: true,
+      );
+      await _service.updateCheckIn(uid, _existingCheckIn!.id, updated);
+      setState(() {
+        _existingCheckIn = updated;
+        _isEditMode = false;
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Check-in updated successfully'),
+            backgroundColor: AppColors.stable,
+          ),
+        );
+      }
+    } else {
+      // New submission
+      final checkIn = CheckInModel(
+        id: '',
+        userId: uid,
+        date: DateTime.now(),
+        symptoms: _selectedSymptoms.toList(),
+        healthStatus: _healthStatus,
+        additionalNotes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+        submittedToDoctor: true,
+      );
+      await _service.submitCheckIn(checkIn);
+      final saved = await _service.getTodayCheckIn(uid);
+      setState(() {
+        _existingCheckIn = saved;
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Check-in submitted to your doctor'),
+            backgroundColor: AppColors.stable,
+          ),
+        );
+      }
+    }
   }
 
   Color get _statusColor {
@@ -111,6 +165,10 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
       );
     }
 
+    // Show submitted view if submitted and not in edit mode
+    final showSubmitted =
+        _existingCheckIn != null && !_isEditMode;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -122,59 +180,221 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
           ),
         ],
       ),
-      body: _alreadySubmitted ? _buildSubmittedView() : _buildFormView(),
+      body: showSubmitted
+          ? _buildSubmittedView()
+          : _buildFormView(),
       bottomNavigationBar: const AppBottomNavBar(currentIndex: 3),
     );
   }
 
   Widget _buildSubmittedView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.stable.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_circle,
-                  color: AppColors.stable, size: 44),
+    final checkIn = _existingCheckIn!;
+    final statusColor = checkIn.healthStatus == HealthStatus.stable
+        ? AppColors.stable
+        : checkIn.healthStatus == HealthStatus.warning
+        ? AppColors.warning
+        : AppColors.critical;
+    final statusLabel = checkIn.healthStatus == HealthStatus.stable
+        ? 'Stable'
+        : checkIn.healthStatus == HealthStatus.warning
+        ? 'Warning'
+        : 'Critical';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Success header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.stable.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border:
+              Border.all(color: AppColors.stable.withOpacity(0.3)),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              "Today's Check-In Complete",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+            child: Column(
+              children: [
+                const Icon(Icons.check_circle,
+                    color: AppColors.stable, size: 44),
+                const SizedBox(height: 12),
+                const Text(
+                  "Today's Check-In Submitted",
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Your health status has been sent to your doctor.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 13, color: AppColors.textSecondary),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Your health status has been submitted to your doctor. Come back tomorrow for your next check-in.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Summary of submitted data
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
             ),
-          ],
-        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Submitted Summary',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary)),
+                const SizedBox(height: 12),
+                // Health status
+                Row(
+                  children: [
+                    const Icon(Icons.favorite_outline,
+                        size: 16, color: AppColors.textHint),
+                    const SizedBox(width: 8),
+                    const Text('Health Status: ',
+                        style: TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (checkIn.symptoms.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  const Text('Symptoms:',
+                      style: TextStyle(
+                          fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: checkIn.symptoms
+                        .map((s) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                            color: AppColors.primary
+                                .withOpacity(0.2)),
+                      ),
+                      child: Text(s,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primary)),
+                    ))
+                        .toList(),
+                  ),
+                ],
+                if (checkIn.additionalNotes != null &&
+                    checkIn.additionalNotes!.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  const Text('Notes:',
+                      style: TextStyle(
+                          fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 4),
+                  Text(
+                    checkIn.additionalNotes!,
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textPrimary),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Edit button
+          OutlinedButton.icon(
+            onPressed: _enterEditMode,
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Update Check-In'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+          const Text(
+            'You can update your check-in if your condition has changed',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11, color: AppColors.textHint),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFormView() {
+    final isEditing = _isEditMode;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Edit mode notice
+          if (isEditing) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.upcoming.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: AppColors.upcoming.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.edit_outlined,
+                      color: AppColors.upcoming, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'You are updating your daily check-in. Changes will be sent to your doctor.',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.upcoming,
+                          height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
+
           // Health status selector
           Container(
             padding: const EdgeInsets.all(16),
@@ -219,21 +439,24 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.symmetric(horizontal: 4),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding:
+                          const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? color
                                 : color.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: color.withOpacity(isSelected ? 1 : 0.3),
+                              color: color
+                                  .withOpacity(isSelected ? 1 : 0.3),
                               width: isSelected ? 1.5 : 0.8,
                             ),
                           ),
                           child: Column(
                             children: [
                               Icon(icon,
-                                  color: isSelected ? Colors.white : color,
+                                  color:
+                                  isSelected ? Colors.white : color,
                                   size: 26),
                               const SizedBox(height: 4),
                               Text(
@@ -345,7 +568,6 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
                   }).toList(),
                 ),
                 const SizedBox(height: 12),
-                // Custom symptom input
                 Row(
                   children: [
                     Expanded(
@@ -407,17 +629,55 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
 
           const SizedBox(height: 20),
 
-          ElevatedButton.icon(
-            onPressed: _isLoading ? null : _submit,
-            icon: _isLoading
-                ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
-                : const Icon(Icons.send_rounded),
-            label: Text(_isLoading ? 'Submitting...' : 'Submit Check-In'),
-          ),
+          // Submit / Cancel buttons
+          if (isEditing) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _cancelEdit,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      side:
+                      const BorderSide(color: AppColors.border),
+                      minimumSize: const Size(0, 50),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _submit,
+                    icon: _isLoading
+                        ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                        : const Icon(Icons.update_rounded),
+                    label: Text(
+                        _isLoading ? 'Updating...' : 'Update Check-In'),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : _submit,
+              icon: _isLoading
+                  ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.send_rounded),
+              label: Text(_isLoading ? 'Submitting...' : 'Submit Check-In'),
+            ),
+          ],
 
           const SizedBox(height: 8),
           const Text(

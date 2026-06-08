@@ -11,11 +11,9 @@ class MedicationProvider extends ChangeNotifier {
   List<AppointmentModel> _appointments = [];
   StreamSubscription? _medSubscription;
   StreamSubscription? _apptSubscription;
-  bool _isLoading = false;
 
   List<MedicationModel> get medications => _medications;
   List<AppointmentModel> get appointments => _appointments;
-  bool get isLoading => _isLoading;
 
   void initialize(String userId) {
     _medSubscription?.cancel();
@@ -49,17 +47,15 @@ class MedicationProvider extends ChangeNotifier {
     }
   }
 
-  // Today's next upcoming medication
   MedicationModel? get nextMedication {
     final now = DateTime.now();
     MedicationModel? next;
     DateTime? nextTime;
-
     for (final med in _medications) {
       if (!med.isScheduledForDate(now)) continue;
-      for (final time in med.scheduledTimes) {
-        final todayTime = DateTime(
-            now.year, now.month, now.day, time.hour, time.minute);
+      for (final t in med.scheduledTimes) {
+        final todayTime =
+        DateTime(now.year, now.month, now.day, t.hour, t.minute);
         if (todayTime.isAfter(now)) {
           if (nextTime == null || todayTime.isBefore(nextTime!)) {
             nextTime = todayTime;
@@ -74,12 +70,11 @@ class MedicationProvider extends ChangeNotifier {
   DateTime? get nextMedicationTime {
     final now = DateTime.now();
     DateTime? nextTime;
-
     for (final med in _medications) {
       if (!med.isScheduledForDate(now)) continue;
-      for (final time in med.scheduledTimes) {
-        final todayTime = DateTime(
-            now.year, now.month, now.day, time.hour, time.minute);
+      for (final t in med.scheduledTimes) {
+        final todayTime =
+        DateTime(now.year, now.month, now.day, t.hour, t.minute);
         if (todayTime.isAfter(now)) {
           if (nextTime == null || todayTime.isBefore(nextTime!)) {
             nextTime = todayTime;
@@ -88,6 +83,39 @@ class MedicationProvider extends ChangeNotifier {
       }
     }
     return nextTime;
+  }
+
+  // Get overdue medications that haven't been replaced by next dose
+  List<_OverdueMed> get overdueMedications {
+    final now = DateTime.now();
+    final overdue = <_OverdueMed>[];
+    for (final med in _medications) {
+      if (!med.isScheduledForDate(now)) continue;
+      final sortedTimes = List<DateTime>.from(med.scheduledTimes)
+        ..sort((a, b) => a.compareTo(b));
+      for (int i = 0; i < sortedTimes.length; i++) {
+        final t = sortedTimes[i];
+        final todayTime =
+        DateTime(now.year, now.month, now.day, t.hour, t.minute);
+        final timeKey =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+        final status = med.takenStatus[timeKey] ?? MedicationStatus.pending;
+        if (status == MedicationStatus.overdue) {
+          // Check if next dose exists and is in the future
+          DateTime? nextDoseTime;
+          if (i + 1 < sortedTimes.length) {
+            final nt = sortedTimes[i + 1];
+            nextDoseTime =
+                DateTime(now.year, now.month, now.day, nt.hour, nt.minute);
+          }
+          final showUntil = nextDoseTime ?? todayTime.add(const Duration(hours: 24));
+          if (now.isBefore(showUntil)) {
+            overdue.add(_OverdueMed(medication: med, scheduledTime: todayTime, timeKey: timeKey));
+          }
+        }
+      }
+    }
+    return overdue;
   }
 
   List<MedicationModel> getMedicationsForDate(DateTime date) {
@@ -106,8 +134,7 @@ class MedicationProvider extends ChangeNotifier {
     final now = DateTime.now();
     return _appointments
         .where((a) =>
-    a.status == AppointmentStatus.upcoming &&
-        a.dateTime.isAfter(now))
+    a.status == AppointmentStatus.upcoming && a.dateTime.isAfter(now))
         .toList()
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
   }
@@ -124,10 +151,26 @@ class MedicationProvider extends ChangeNotifier {
     await _service.markMedicationTaken(userId, medicationId, timeKey);
   }
 
+  Future<void> requestReschedule(
+      String userId, String appointmentId, String note) async {
+    await _service.requestReschedule(userId, appointmentId, note);
+  }
+
   @override
   void dispose() {
     _medSubscription?.cancel();
     _apptSubscription?.cancel();
     super.dispose();
   }
+}
+
+class _OverdueMed {
+  final MedicationModel medication;
+  final DateTime scheduledTime;
+  final String timeKey;
+  _OverdueMed({
+    required this.medication,
+    required this.scheduledTime,
+    required this.timeKey,
+  });
 }

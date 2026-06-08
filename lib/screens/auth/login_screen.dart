@@ -18,10 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.signInWithGoogle();
-
     if (!mounted) return;
     setState(() => _isLoading = false);
-
     if (success) {
       if (authProvider.needsPrivacyAccept) {
         Navigator.pushReplacementNamed(context, AppRouter.privacyPolicy);
@@ -48,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               const Spacer(flex: 2),
-              // Logo & Branding
+              // Logo
               Container(
                 width: 80,
                 height: 80,
@@ -68,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
               const Text(
-                'MediCinnect',
+                'MediHub',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
@@ -79,13 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 8),
               const Text(
                 'Manage your health with ease',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
               ),
               const Spacer(flex: 2),
-              // Illustration area
+              // Card
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
@@ -101,23 +96,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text(
                       'Welcome Back',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'Sign in to access your personalized\nmedication schedule and health records',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                        height: 1.5,
-                      ),
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                          height: 1.5),
                     ),
                     const SizedBox(height: 28),
-                    // Google Sign-In Button
                     _isLoading
                         ? const CircularProgressIndicator(
                         color: AppColors.primary)
@@ -172,10 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'By signing in, you agree to our Terms of Service\nand Privacy Policy',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textHint,
-                  height: 1.5,
-                ),
+                    fontSize: 11, color: AppColors.textHint, height: 1.5),
               ),
               const SizedBox(height: 20),
             ],
