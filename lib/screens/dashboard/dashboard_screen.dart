@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/medication_provider.dart';
 import '../../models/medication_model.dart';
+import '../../models/appointment_model.dart';
 import '../../routes/app_router.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/bottom_nav_bar.dart';
@@ -53,7 +54,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return entries;
   }
 
-  // Find next upcoming (non-overdue) medication
   _ScheduledMedEntry? _getNextMedication(
       List<_ScheduledMedEntry> entries) {
     final now = DateTime.now();
@@ -66,33 +66,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return null;
   }
 
-  // Find current overdue medications (before next dose)
-  List<_ScheduledMedEntry> _getOverdueMeds(
-      List<_ScheduledMedEntry> entries) {
-    final now = DateTime.now();
-    final overdue = <_ScheduledMedEntry>[];
-    for (int i = 0; i < entries.length; i++) {
-      final e = entries[i];
-      if (e.status == MedicationStatus.overdue) {
-        // Show until next dose time
-        DateTime? nextDoseTime;
-        for (int j = i + 1; j < entries.length; j++) {
-          if (entries[j].medication.id == e.medication.id) {
-            nextDoseTime = entries[j].scheduledTime;
-            break;
-          }
-        }
-        // If no next dose today, show until end of day
-        final showUntil =
-            nextDoseTime ?? DateTime(now.year, now.month, now.day, 23, 59);
-        if (now.isBefore(showUntil)) {
-          overdue.add(e);
-        }
-      }
-    }
-    return overdue;
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -100,14 +73,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = auth.user;
     final entries = _getTodayEntries(medProvider.medications);
     final nextMed = _getNextMedication(entries);
-    final overdueMeds = _getOverdueMeds(entries);
+    final nextAppointment = medProvider.upcomingAppointments.isNotEmpty
+        ? medProvider.upcomingAppointments.first
+        : null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Header ──────────────────────────────────────────────
+            // ── Header ────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Container(
                 color: AppColors.surface,
@@ -169,70 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            // ── Overdue Banner (shown in RED until next dose) ────────
-            if (overdueMeds.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Column(
-                    children: overdueMeds.map((e) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.overdue.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                              color: AppColors.overdue.withOpacity(0.4),
-                              width: 1.5),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: AppColors.overdue.withOpacity(0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.medication_rounded,
-                                  color: AppColors.overdue, size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    e.medication.name,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.overdue,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${e.medication.dosage} — missed at ${_fmtTime(e.scheduledTime)}',
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.overdue),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            CountdownTimer(
-                              targetTime: e.scheduledTime,
-                              isOverdue: true,
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-
-            // ── Today's Medication Banner ────────────────────────────
+            // ── Today's Medication Banner ──────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -305,7 +217,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+            // ── Next Appointment Card ──────────────────────────────
+            if (nextAppointment != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _NextAppointmentCard(
+                      appointment: nextAppointment),
+                ),
+              ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
             // ── Quick Actions ──────────────────────────────────────
             SliverToBoxAdapter(
@@ -362,7 +286,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onPressed: () => Navigator.pushNamed(
                           context, AppRouter.myMedication),
                       child: const Text('View All',
-                          style: TextStyle(color: AppColors.primary)),
+                          style:
+                          TextStyle(color: AppColors.primary)),
                     ),
                   ],
                 ),
@@ -395,8 +320,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onTakeMedication: () {
                           final uid = auth.user?.uid;
                           if (uid != null) {
-                            medProvider.markTaken(
-                                uid, entry.medication.id, entry.timeKey);
+                            medProvider.markTaken(uid,
+                                entry.medication.id, entry.timeKey);
                           }
                         },
                       );
@@ -420,15 +345,223 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (hour < 17) return 'Afternoon';
     return 'Evening';
   }
+}
 
-  String _fmtTime(DateTime dt) {
-    final hour =
-    dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    final period = dt.hour >= 12 ? 'PM' : 'AM';
-    final min = dt.minute.toString().padLeft(2, '0');
-    return '$hour:$min $period';
+// ── Next Appointment Card ─────────────────────────────────────────────────────
+
+class _NextAppointmentCard extends StatelessWidget {
+  final AppointmentModel appointment;
+  const _NextAppointmentCard({required this.appointment});
+
+  @override
+  Widget build(BuildContext context) {
+    final daysUntil =
+        appointment.dateTime.difference(DateTime.now()).inDays;
+    final daysLabel = daysUntil == 0
+        ? 'Today'
+        : daysUntil == 1
+        ? 'Tomorrow'
+        : 'In $daysUntil days';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.event_outlined,
+                  color: AppColors.upcoming, size: 18),
+              const SizedBox(width: 8),
+              const Text(
+                'Next Appointment',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.upcoming.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  daysLabel,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.upcoming,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 16, color: AppColors.border),
+          _DetailRow(
+            icon: Icons.local_hospital_outlined,
+            label: 'Clinic',
+            value: appointment.clinic,
+          ),
+          const SizedBox(height: 8),
+          _DetailRow(
+            icon: Icons.person_outline,
+            label: 'Doctor',
+            value: appointment.doctorName,
+          ),
+          const SizedBox(height: 8),
+          _DetailRow(
+            icon: Icons.calendar_today_outlined,
+            label: 'Date',
+            value: DateFormat('EEEE, MMMM d, yyyy')
+                .format(appointment.dateTime),
+          ),
+          const SizedBox(height: 8),
+          _DetailRow(
+            icon: Icons.access_time_outlined,
+            label: 'Time',
+            value: DateFormat('hh:mm a').format(appointment.dateTime),
+          ),
+
+          // ── Investigations ─────────────────────────────────────
+          if (appointment.hasInvestigations) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: AppColors.warning.withOpacity(0.4),
+                    width: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.assignment_outlined,
+                          color: AppColors.warning, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        '⚠ Reports to Bring',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ...appointment.investigations.map(
+                        (inv) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.check_box_outline_blank,
+                              size: 16, color: AppColors.warning),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              inv,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (appointment.investigationNotes != null &&
+                      appointment.investigationNotes!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline,
+                              size: 14, color: AppColors.warning),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              appointment.investigationNotes!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.warning,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _DetailRow(
+      {required this.icon,
+        required this.label,
+        required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 15, color: AppColors.textHint),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+              fontSize: 12, color: AppColors.textSecondary),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 class _ScheduledMedEntry {
   final MedicationModel medication;
