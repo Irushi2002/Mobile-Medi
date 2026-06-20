@@ -146,16 +146,6 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
     }
   }
 
-  Color get _statusColor {
-    switch (_healthStatus) {
-      case HealthStatus.stable:
-        return AppColors.stable;
-      case HealthStatus.warning:
-        return AppColors.warning;
-      case HealthStatus.critical:
-        return AppColors.critical;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -209,17 +199,17 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.stable.withOpacity(0.08),
+              color: AppColors.stable.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
               border:
-              Border.all(color: AppColors.stable.withOpacity(0.3)),
+              Border.all(color: AppColors.stable.withValues(alpha: 0.3)),
             ),
-            child: Column(
+            child: const Column(
               children: [
-                const Icon(Icons.check_circle,
+                Icon(Icons.check_circle,
                     color: AppColors.stable, size: 44),
-                const SizedBox(height: 12),
-                const Text(
+                SizedBox(height: 12),
+                Text(
                   "Today's Check-In Submitted",
                   style: TextStyle(
                     fontSize: 17,
@@ -227,8 +217,8 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
+                SizedBox(height: 4),
+                Text(
                   'Your health status has been sent to your doctor.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -271,7 +261,7 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -299,11 +289,11 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.08),
+                        color: AppColors.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                             color: AppColors.primary
-                                .withOpacity(0.2)),
+                                .withValues(alpha: 0.2)),
                       ),
                       child: Text(s,
                           style: const TextStyle(
@@ -370,13 +360,13 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.upcoming.withOpacity(0.08),
+                color: AppColors.upcoming.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: AppColors.upcoming.withOpacity(0.3)),
+                    color: AppColors.upcoming.withValues(alpha: 0.3)),
               ),
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.edit_outlined,
                       color: AppColors.upcoming, size: 18),
                   SizedBox(width: 8),
@@ -444,11 +434,11 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? color
-                                : color.withOpacity(0.08),
+                                : color.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: color
-                                  .withOpacity(isSelected ? 1 : 0.3),
+                                  .withValues(alpha: isSelected ? 1 : 0.3),
                               width: isSelected ? 1.5 : 0.8,
                             ),
                           ),
@@ -505,7 +495,7 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

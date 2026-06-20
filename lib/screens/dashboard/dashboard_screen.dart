@@ -127,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: CircleAvatar(
                         radius: 22,
                         backgroundColor:
-                        AppColors.primaryLight.withOpacity(0.15),
+                        AppColors.primaryLight.withValues(alpha: 0.15),
                         backgroundImage: user?.photoUrl != null
                             ? NetworkImage(user!.photoUrl!)
                             : null,
@@ -144,6 +144,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
+            // ── Overdue Banner (shown in RED until next dose) ────────
+            if (overdueMeds.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Column(
+                    children: overdueMeds.map((e) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.overdue.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: AppColors.overdue.withValues(alpha: 0.4),
+                              width: 1.5),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.overdue.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.medication_rounded,
+                                  color: AppColors.overdue, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    e.medication.name,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.overdue,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${e.medication.dosage} — missed at ${_fmtTime(e.scheduledTime)}',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.overdue),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            CountdownTimer(
+                              targetTime: e.scheduledTime,
+                              isOverdue: true,
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
+            // ── Today's Medication Banner ────────────────────────────
             // ── Today's Medication Banner ──────────────────────────
             SliverToBoxAdapter(
               child: Padding(
@@ -605,7 +669,7 @@ class _QuickActionCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 20),
