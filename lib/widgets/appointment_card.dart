@@ -71,7 +71,7 @@ class AppointmentCard extends StatelessWidget {
                   width: 52,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: _statusColor.withValues(alpha: 0.1),
+                    color: _statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -125,7 +125,7 @@ class AppointmentCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: _statusColor.withValues(alpha: 0.1),
+                              color: _statusColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -187,10 +187,10 @@ class AppointmentCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.stable.withValues(alpha: 0.08),
+                  color: AppColors.stable.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: AppColors.stable.withValues(alpha: 0.3)),
+                      color: AppColors.stable.withOpacity(0.3)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,18 +221,18 @@ class AppointmentCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.08),
+                  color: AppColors.warning.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: AppColors.warning.withValues(alpha: 0.3)),
+                      color: AppColors.warning.withOpacity(0.3)),
                 ),
-                child: const Row(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.schedule,
+                    const Icon(Icons.schedule,
                         color: AppColors.warning, size: 16),
-                    SizedBox(width: 8),
-                    Expanded(
+                    const SizedBox(width: 8),
+                    const Expanded(
                       child: Text(
                         'Reschedule request sent — awaiting doctor approval',
                         style: TextStyle(

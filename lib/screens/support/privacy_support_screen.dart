@@ -14,7 +14,7 @@ class PrivacySupportScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           // Help & Support
-          const _SupportSection(
+          _SupportSection(
             title: 'Help & Support',
             icon: Icons.support_agent_outlined,
             color: AppColors.primary,
@@ -73,23 +73,23 @@ class PrivacySupportScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
             ),
-            child: const Column(
+            child: Column(
               children: [
-                Icon(Icons.medical_services_rounded,
+                const Icon(Icons.medical_services_rounded,
                     color: AppColors.primary, size: 36),
-                SizedBox(height: 10),
-                Text('MediCinnect',
+                const SizedBox(height: 10),
+                const Text('MediCinnect',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     )),
-                SizedBox(height: 4),
-                Text('Version 1.0.0',
+                const SizedBox(height: 4),
+                const Text('Version 1.0.0',
                     style: TextStyle(
                         fontSize: 12, color: AppColors.textSecondary)),
-                SizedBox(height: 4),
-                Text('© 2024 MediCinnect. All rights reserved.',
+                const SizedBox(height: 4),
+                const Text('© 2024 MediCinnect. All rights reserved.',
                     style: TextStyle(
                         fontSize: 11, color: AppColors.textHint)),
               ],
@@ -247,7 +247,7 @@ class _ContactTile extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+                color: color.withOpacity(0.1), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 12),
