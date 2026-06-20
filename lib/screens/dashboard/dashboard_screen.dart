@@ -152,7 +152,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: CircleAvatar(
                         radius: 22,
                         backgroundColor:
-                        AppColors.primaryLight.withOpacity(0.15),
+                        AppColors.primaryLight.withValues(alpha: 0.15),
                         backgroundImage: user?.photoUrl != null
                             ? NetworkImage(user!.photoUrl!)
                             : null,
@@ -180,10 +180,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: AppColors.overdue.withOpacity(0.08),
+                          color: AppColors.overdue.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                              color: AppColors.overdue.withOpacity(0.4),
+                              color: AppColors.overdue.withValues(alpha: 0.4),
                               width: 1.5),
                         ),
                         child: Row(
@@ -192,7 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: AppColors.overdue.withOpacity(0.15),
+                                color: AppColors.overdue.withValues(alpha: 0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.medication_rounded,
@@ -472,7 +472,7 @@ class _QuickActionCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 20),
