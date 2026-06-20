@@ -152,11 +152,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                calendarStyle: const CalendarStyle(
-                  selectedDecoration: BoxDecoration(
+                calendarStyle: CalendarStyle(
+                  selectedDecoration: const BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle),
-                  todayDecoration: BoxDecoration(
+                  todayDecoration: const BoxDecoration(
                       color: AppColors.primaryLight,
                       shape: BoxShape.circle),
                   markerDecoration: BoxDecoration(

@@ -94,12 +94,12 @@ class _MedicationHistoryScreenState extends State<MedicationHistoryScreen> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              calendarStyle: const CalendarStyle(
-                selectedDecoration: BoxDecoration(
+              calendarStyle: CalendarStyle(
+                selectedDecoration: const BoxDecoration(
                   color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
-                todayDecoration: BoxDecoration(
+                todayDecoration: const BoxDecoration(
                   color: AppColors.primaryLight,
                   shape: BoxShape.circle,
                 ),
@@ -181,7 +181,7 @@ class _MedicationHistoryScreenState extends State<MedicationHistoryScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isMissed
-              ? AppColors.overdue.withValues(alpha: 0.35)
+              ? AppColors.overdue.withOpacity(0.35)
               : AppColors.border,
           width: 0.8,
         ),
@@ -192,7 +192,7 @@ class _MedicationHistoryScreenState extends State<MedicationHistoryScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+              color: color.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -231,7 +231,7 @@ class _MedicationHistoryScreenState extends State<MedicationHistoryScreen> {
             padding:
             const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -282,7 +282,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

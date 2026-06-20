@@ -76,9 +76,9 @@ class _CountdownTimerState extends State<CountdownTimer> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.overdue.withValues(alpha: 0.12),
+          color: AppColors.overdue.withOpacity(0.12),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.overdue.withValues(alpha: 0.4)),
+          border: Border.all(color: AppColors.overdue.withOpacity(0.4)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -106,11 +106,11 @@ class _CountdownTimerState extends State<CountdownTimer> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: (isUrgent ? AppColors.warning : AppColors.primary)
-            .withValues(alpha: 0.1),
+            .withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: (isUrgent ? AppColors.warning : AppColors.primary)
-              .withValues(alpha: 0.3),
+              .withOpacity(0.3),
         ),
       ),
       child: Row(

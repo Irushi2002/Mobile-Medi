@@ -76,8 +76,13 @@ class MedicationProvider extends ChangeNotifier {
       for (final t in med.scheduledTimes) {
         final todayTime =
         DateTime(now.year, now.month, now.day, t.hour, t.minute);
-        if (todayTime.isAfter(now)) {
-          if (nextTime == null || todayTime.isBefore(nextTime)) {
+        final timeKey =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+        final status =
+            med.takenStatus[timeKey] ?? MedicationStatus.pending;
+        if (status == MedicationStatus.pending &&
+            todayTime.isAfter(now)) {
+          if (nextTime == null || todayTime.isBefore(nextTime!)) {
             nextTime = todayTime;
             next = med;
           }
@@ -96,46 +101,13 @@ class MedicationProvider extends ChangeNotifier {
         final todayTime =
         DateTime(now.year, now.month, now.day, t.hour, t.minute);
         if (todayTime.isAfter(now)) {
-          if (nextTime == null || todayTime.isBefore(nextTime)) {
+          if (nextTime == null || todayTime.isBefore(nextTime!)) {
             nextTime = todayTime;
           }
         }
       }
     }
     return nextTime;
-  }
-
-  // Get overdue medications that haven't been replaced by next dose
-  List<OverdueMed> get overdueMedications {
-    final now = DateTime.now();
-    final overdue = <OverdueMed>[];
-    for (final med in _medications) {
-      if (!med.isScheduledForDate(now)) continue;
-      final sortedTimes = List<DateTime>.from(med.scheduledTimes)
-        ..sort((a, b) => a.compareTo(b));
-      for (int i = 0; i < sortedTimes.length; i++) {
-        final t = sortedTimes[i];
-        final todayTime =
-        DateTime(now.year, now.month, now.day, t.hour, t.minute);
-        final timeKey =
-            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-        final status = med.takenStatus[timeKey] ?? MedicationStatus.pending;
-        if (status == MedicationStatus.overdue) {
-          // Check if next dose exists and is in the future
-          DateTime? nextDoseTime;
-          if (i + 1 < sortedTimes.length) {
-            final nt = sortedTimes[i + 1];
-            nextDoseTime =
-                DateTime(now.year, now.month, now.day, nt.hour, nt.minute);
-          }
-          final showUntil = nextDoseTime ?? todayTime.add(const Duration(hours: 24));
-          if (now.isBefore(showUntil)) {
-            overdue.add(OverdueMed(medication: med, scheduledTime: todayTime, timeKey: timeKey));
-          }
-        }
-      }
-    }
-    return overdue;
   }
 
   List<MedicationModel> getMedicationsForDate(DateTime date) {
@@ -184,15 +156,4 @@ class MedicationProvider extends ChangeNotifier {
     _overdueTimer?.cancel();
     super.dispose();
   }
-}
-
-class OverdueMed {
-  final MedicationModel medication;
-  final DateTime scheduledTime;
-  final String timeKey;
-  OverdueMed({
-    required this.medication,
-    required this.scheduledTime,
-    required this.timeKey,
-  });
 }

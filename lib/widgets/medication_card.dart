@@ -69,13 +69,6 @@ class MedicationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isOverdue
-              ? AppColors.overdue.withValues(alpha: 0.4)
-              : AppColors.border,
-          width: isOverdue ? 1.5 : 0.8,
-        ),
-        boxShadow: isOverdue
-            ? [BoxShadow(color: AppColors.overdue.withValues(alpha: 0.1), blurRadius: 8)]
-            : [],
               ? AppColors.overdue.withOpacity(0.5)
               : isTaken
               ? AppColors.stable.withOpacity(0.3)
@@ -92,7 +85,7 @@ class MedicationCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: _statusColor.withValues(alpha: 0.12),
+                color: _statusColor.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -154,7 +147,7 @@ class MedicationCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _statusColor.withValues(alpha: 0.1),
+                    color: _statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: _statusColor.withOpacity(0.3),

@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 90,
                     height: 90,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: Colors.white.withOpacity(0.15),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.medical_services_rounded,
@@ -95,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen>
                   Text(
                     'Your Health, Connected',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: Colors.white.withOpacity(0.8),
                       fontSize: 14,
                       letterSpacing: 0.5,
                     ),
