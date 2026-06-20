@@ -79,13 +79,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.upcoming.withOpacity(0.08),
+                color: AppColors.upcoming.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: AppColors.upcoming.withOpacity(0.3)),
+                    color: AppColors.upcoming.withValues(alpha: 0.3)),
               ),
-              child: Row(
-                children: const [
+              child: const Row(
+                children: [
                   Icon(Icons.info_outline,
                       color: AppColors.upcoming, size: 18),
                   SizedBox(width: 8),
