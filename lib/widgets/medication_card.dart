@@ -58,11 +58,14 @@ class MedicationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOverdue = status == MedicationStatus.overdue;
+    final isTaken = status == MedicationStatus.taken;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: isOverdue
+            ? AppColors.overdue.withOpacity(0.04)
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isOverdue
@@ -73,12 +76,18 @@ class MedicationCard extends StatelessWidget {
         boxShadow: isOverdue
             ? [BoxShadow(color: AppColors.overdue.withValues(alpha: 0.1), blurRadius: 8)]
             : [],
+              ? AppColors.overdue.withOpacity(0.5)
+              : isTaken
+              ? AppColors.stable.withOpacity(0.3)
+              : AppColors.border,
+          width: isOverdue ? 1.5 : 0.8,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            // Pill icon
+            // ── Pill icon ──────────────────────────────────────
             Container(
               width: 44,
               height: 44,
@@ -86,11 +95,15 @@ class MedicationCard extends StatelessWidget {
                 color: _statusColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.medication_rounded,
-                  color: _statusColor, size: 22),
+              child: Icon(
+                Icons.medication_rounded,
+                color: _statusColor,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 12),
-            // Medication info
+
+            // ── Medication info ────────────────────────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,36 +121,51 @@ class MedicationCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${medication.dosage}  •  ${_formatTime(scheduledTime)}',
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isOverdue
+                          ? AppColors.overdue.withOpacity(0.7)
+                          : AppColors.textSecondary,
+                    ),
                   ),
                   if (medication.instructions != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       medication.instructions!,
-                      style: const TextStyle(
-                          fontSize: 11, color: AppColors.textHint),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isOverdue
+                            ? AppColors.overdue.withOpacity(0.6)
+                            : AppColors.textHint,
+                      ),
                     ),
-                  ]
+                  ],
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            // Status / Action
+
+            // ── Status + action ────────────────────────────────
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                // Status badge
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _statusColor.withOpacity(0.3),
+                      width: 0.8,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_statusIcon, size: 12, color: _statusColor),
+                      Icon(_statusIcon,
+                          size: 12, color: _statusColor),
                       const SizedBox(width: 4),
                       Text(
                         _statusLabel,
@@ -150,8 +178,11 @@ class MedicationCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (status == MedicationStatus.pending ||
-                    status == MedicationStatus.overdue) ...[
+
+                // Mark Taken button for pending and overdue
+                if ((status == MedicationStatus.pending ||
+                    status == MedicationStatus.overdue) &&
+                    onTakeMedication != null) ...[
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: onTakeMedication,
@@ -159,7 +190,9 @@ class MedicationCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        color: isOverdue
+                            ? AppColors.overdue
+                            : AppColors.primary,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -172,7 +205,7 @@ class MedicationCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                ]
+                ],
               ],
             ),
           ],
@@ -182,7 +215,8 @@ class MedicationCard extends StatelessWidget {
   }
 
   String _formatTime(DateTime dt) {
-    final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final hour =
+    dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     final period = dt.hour >= 12 ? 'PM' : 'AM';
     final min = dt.minute.toString().padLeft(2, '0');
     return '$hour:$min $period';
