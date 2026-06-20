@@ -11,6 +11,7 @@ class MedicationProvider extends ChangeNotifier {
   List<AppointmentModel> _appointments = [];
   StreamSubscription? _medSubscription;
   StreamSubscription? _apptSubscription;
+  Timer? _overdueTimer;
 
   List<MedicationModel> get medications => _medications;
   List<AppointmentModel> get appointments => _appointments;
@@ -18,11 +19,11 @@ class MedicationProvider extends ChangeNotifier {
   void initialize(String userId) {
     _medSubscription?.cancel();
     _apptSubscription?.cancel();
+    _overdueTimer?.cancel();
 
     _medSubscription =
         _service.getMedicationsStream(userId).listen((meds) {
           _medications = meds;
-          _checkAndMarkOverdue(userId);
           notifyListeners();
         });
 
@@ -31,16 +32,35 @@ class MedicationProvider extends ChangeNotifier {
           _appointments = appts;
           notifyListeners();
         });
+
+    // Check overdue every minute
+    _overdueTimer = Timer.periodic(
+      const Duration(minutes: 1),
+          (_) => _checkAndMarkOverdue(userId),
+    );
+
+    // Also check immediately
+    Future.delayed(const Duration(seconds: 5),
+            () => _checkAndMarkOverdue(userId));
   }
 
   void _checkAndMarkOverdue(String userId) {
     final now = DateTime.now();
     for (final med in _medications) {
+      if (!med.isScheduledForDate(now)) continue;
       for (final time in med.scheduledTimes) {
+        final todayTime =
+        DateTime(now.year, now.month, now.day, time.hour, time.minute);
         final timeKey =
-            '${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')}_${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-        if (now.isAfter(time.add(const Duration(minutes: 30))) &&
-            !med.takenStatus.containsKey(timeKey)) {
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
+        final currentStatus =
+            med.takenStatus[timeKey] ?? MedicationStatus.pending;
+
+        // Mark overdue if more than 30 minutes past scheduled time
+        // and not already taken or already marked overdue
+        if (now.isAfter(todayTime.add(const Duration(minutes: 30))) &&
+            currentStatus == MedicationStatus.pending) {
           _service.markMedicationOverdue(userId, med.id, timeKey);
         }
       }
@@ -134,7 +154,8 @@ class MedicationProvider extends ChangeNotifier {
     final now = DateTime.now();
     return _appointments
         .where((a) =>
-    a.status == AppointmentStatus.upcoming && a.dateTime.isAfter(now))
+    a.status == AppointmentStatus.upcoming &&
+        a.dateTime.isAfter(now))
         .toList()
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
   }
@@ -160,6 +181,7 @@ class MedicationProvider extends ChangeNotifier {
   void dispose() {
     _medSubscription?.cancel();
     _apptSubscription?.cancel();
+    _overdueTimer?.cancel();
     super.dispose();
   }
 }
