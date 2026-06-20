@@ -57,7 +57,7 @@ class MedicationProvider extends ChangeNotifier {
         final todayTime =
         DateTime(now.year, now.month, now.day, t.hour, t.minute);
         if (todayTime.isAfter(now)) {
-          if (nextTime == null || todayTime.isBefore(nextTime!)) {
+          if (nextTime == null || todayTime.isBefore(nextTime)) {
             nextTime = todayTime;
             next = med;
           }
@@ -76,7 +76,7 @@ class MedicationProvider extends ChangeNotifier {
         final todayTime =
         DateTime(now.year, now.month, now.day, t.hour, t.minute);
         if (todayTime.isAfter(now)) {
-          if (nextTime == null || todayTime.isBefore(nextTime!)) {
+          if (nextTime == null || todayTime.isBefore(nextTime)) {
             nextTime = todayTime;
           }
         }
@@ -86,9 +86,9 @@ class MedicationProvider extends ChangeNotifier {
   }
 
   // Get overdue medications that haven't been replaced by next dose
-  List<_OverdueMed> get overdueMedications {
+  List<OverdueMed> get overdueMedications {
     final now = DateTime.now();
-    final overdue = <_OverdueMed>[];
+    final overdue = <OverdueMed>[];
     for (final med in _medications) {
       if (!med.isScheduledForDate(now)) continue;
       final sortedTimes = List<DateTime>.from(med.scheduledTimes)
@@ -110,7 +110,7 @@ class MedicationProvider extends ChangeNotifier {
           }
           final showUntil = nextDoseTime ?? todayTime.add(const Duration(hours: 24));
           if (now.isBefore(showUntil)) {
-            overdue.add(_OverdueMed(medication: med, scheduledTime: todayTime, timeKey: timeKey));
+            overdue.add(OverdueMed(medication: med, scheduledTime: todayTime, timeKey: timeKey));
           }
         }
       }
@@ -164,11 +164,11 @@ class MedicationProvider extends ChangeNotifier {
   }
 }
 
-class _OverdueMed {
+class OverdueMed {
   final MedicationModel medication;
   final DateTime scheduledTime;
   final String timeKey;
-  _OverdueMed({
+  OverdueMed({
     required this.medication,
     required this.scheduledTime,
     required this.timeKey,

@@ -54,11 +54,11 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.08),
+                      color: AppColors.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Row(
-                      children: const [
+                    child: const Row(
+                      children: [
                         Icon(Icons.info_outline,
                             color: AppColors.primary, size: 20),
                         SizedBox(width: 10),
@@ -80,10 +80,10 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.stable.withOpacity(0.08),
+                      color: AppColors.stable.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: AppColors.stable.withOpacity(0.3)),
+                          color: AppColors.stable.withValues(alpha: 0.3)),
                     ),
                     child: const Text(
                       'You have read the full Privacy Policy. You may now accept to continue.',
@@ -101,10 +101,10 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              border: Border(top: BorderSide(color: AppColors.border)),
+              border: const Border(top: BorderSide(color: AppColors.border)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, -4),
                 )
