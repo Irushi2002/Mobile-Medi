@@ -6,8 +6,11 @@ import '../utils/constants.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
 
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -18,7 +21,7 @@ class AuthService {
       if (googleUser == null) return null;
 
       final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+          await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -26,10 +29,7 @@ class AuthService {
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
-
-      // Create user document if first time
       await _createUserIfNotExists(userCredential.user!);
-
       return userCredential;
     } catch (e) {
       rethrow;
