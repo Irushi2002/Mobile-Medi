@@ -12,6 +12,7 @@ class AppColors {
   static const Color warning = Color(0xFFFF9800);
   static const Color critical = Color(0xFFF44336);
   static const Color overdue = Color(0xFFE53935);
+  static const Color taken = Color(0xFFE91E63);
 
   // Neutral
   static const Color background = Color(0xFFF5F8FA);

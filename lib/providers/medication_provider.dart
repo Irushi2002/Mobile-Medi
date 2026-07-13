@@ -21,6 +21,9 @@ class MedicationProvider extends ChangeNotifier {
     _apptSubscription?.cancel();
     _overdueTimer?.cancel();
 
+    // Clean up any remaining/previously seeded demo data
+    _service.deleteDemoDataIfExists(userId);
+
     _medSubscription =
         _service.getMedicationsStream(userId).listen((meds) {
           _medications = meds;

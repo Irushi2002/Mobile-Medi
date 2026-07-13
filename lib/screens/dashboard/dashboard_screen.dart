@@ -73,8 +73,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = auth.user;
     final entries = _getTodayEntries(medProvider.medications);
     final nextMed = _getNextMedication(entries);
-    final nextAppointment = medProvider.upcomingAppointments.isNotEmpty
-        ? medProvider.upcomingAppointments.first
+    final upcomingAppts = medProvider.upcomingAppointments;
+    final nextAppointment = upcomingAppts.isNotEmpty &&
+            upcomingAppts.first.dateTime.isBefore(DateTime.now().add(const Duration(days: 7)))
+        ? upcomingAppts.first
         : null;
 
     return Scaffold(
