@@ -52,7 +52,7 @@ class AuthProvider extends ChangeNotifier {
 
       _user = await _authService.getUserData(credential.user!.uid);
 
-      // Seed demo data for new users
+      // Only seed demo data if no real data exists from web backend
       if (_user != null) {
         final meds = await _medicationService.getMedications(_user!.uid);
         if (meds.isEmpty) {
