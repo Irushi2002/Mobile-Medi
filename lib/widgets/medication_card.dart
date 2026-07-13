@@ -185,7 +185,7 @@ class MedicationCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isOverdue
                             ? AppColors.overdue
-                            : AppColors.primary,
+                            : AppColors.taken,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(

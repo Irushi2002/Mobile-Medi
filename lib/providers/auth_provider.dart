@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
-import '../services/medication_service.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
-  final MedicationService _medicationService = MedicationService();
 
   AuthStatus _status = AuthStatus.initial;
   UserModel? _user;
@@ -51,15 +49,6 @@ class AuthProvider extends ChangeNotifier {
       }
 
       _user = await _authService.getUserData(credential.user!.uid);
-
-      // Only seed demo data if no real data exists from web backend
-      if (_user != null) {
-        final meds = await _medicationService.getMedications(_user!.uid);
-        if (meds.isEmpty) {
-          await _medicationService.seedDemoMedications(_user!.uid);
-          await _medicationService.seedDemoAppointments(_user!.uid);
-        }
-      }
 
       _status = AuthStatus.authenticated;
       notifyListeners();

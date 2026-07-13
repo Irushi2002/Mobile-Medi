@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/medication_model.dart';
 import '../models/appointment_model.dart';
 import '../models/checkin_model.dart';
@@ -51,62 +52,7 @@ class MedicationService {
         .update({'takenStatus.$timeKey': MedicationStatus.overdue.name});
   }
 
-  Future<void> seedDemoMedications(String userId) async {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final meds = [
-      {
-        'name': 'Metformin',
-        'dosage': '500mg',
-        'frequency': 'Twice daily',
-        'scheduledTimes': [
-          DateTime(now.year, now.month, now.day, 8, 0).millisecondsSinceEpoch,
-          DateTime(now.year, now.month, now.day, 20, 0).millisecondsSinceEpoch,
-        ],
-        'instructions': 'Take with meals',
-        'prescribedBy': 'Dr. Perera',
-        'startDate': today.millisecondsSinceEpoch,
-        'endDate': null,
-        'takenStatus': {},
-      },
-      {
-        'name': 'Lisinopril',
-        'dosage': '10mg',
-        'frequency': 'Once daily',
-        'scheduledTimes': [
-          DateTime(now.year, now.month, now.day, 9, 0).millisecondsSinceEpoch,
-        ],
-        'instructions': 'Take in the morning',
-        'prescribedBy': 'Dr. Silva',
-        'startDate': today.millisecondsSinceEpoch,
-        'endDate': null,
-        'takenStatus': {},
-      },
-      {
-        'name': 'Aspirin',
-        'dosage': '75mg',
-        'frequency': 'Once daily',
-        'scheduledTimes': [
-          DateTime(now.year, now.month, now.day, 14, 0).millisecondsSinceEpoch,
-        ],
-        'instructions': 'Take after lunch',
-        'prescribedBy': 'Dr. Perera',
-        'startDate': today.millisecondsSinceEpoch,
-        'endDate': null,
-        'takenStatus': {},
-      },
-    ];
-    final batch = _firestore.batch();
-    for (final med in meds) {
-      final ref = _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(userId)
-          .collection(AppConstants.medicationsCollection)
-          .doc();
-      batch.set(ref, med);
-    }
-    await batch.commit();
-  }
+
 
   // ─── Appointments ─────────────────────────────────────────────────────────
 
@@ -136,75 +82,7 @@ class MedicationService {
     });
   }
 
-  Future<void> seedDemoAppointments(String userId) async {
-    final now = DateTime.now();
-    final appointments = [
-      {
-        'dateTime': DateTime(now.year, now.month, now.day + 3, 10, 30)
-            .millisecondsSinceEpoch,
-        'clinic': 'Cardiology Clinic',
-        'doctorName': 'Dr. Nimal Perera',
-        'requestDetails': 'Routine follow-up for blood pressure monitoring',
-        'status': AppointmentStatus.upcoming.name,
-        'rescheduleStatus': RescheduleStatus.none.name,
-        'investigations': [
-          'Full Blood Count (FBC)',
-          'ECG Report',
-          'Blood Pressure Log (last 2 weeks)',
-        ],
-        'investigationNotes':
-        'Please bring all reports in original. Fasting required for blood tests.',
-      },
-      {
-        'dateTime': DateTime(now.year, now.month, now.day + 7, 14, 0)
-            .millisecondsSinceEpoch,
-        'clinic': 'Endocrinology Department',
-        'doctorName': 'Dr. Kamala Silva',
-        'requestDetails': 'Diabetes management review and HbA1c test',
-        'status': AppointmentStatus.upcoming.name,
-        'rescheduleStatus': RescheduleStatus.none.name,
-        'investigations': [
-          'HbA1c Blood Test',
-          'Fasting Blood Sugar Report',
-          'Urine Microalbumin Test',
-        ],
-        'investigationNotes':
-        'Must be fasting for at least 8 hours before blood test.',
-      },
-      {
-        'dateTime': DateTime(now.year, now.month, now.day - 5, 9, 0)
-            .millisecondsSinceEpoch,
-        'clinic': 'General Medicine',
-        'doctorName': 'Dr. Ruwan Fernando',
-        'requestDetails': 'General health check-up',
-        'status': AppointmentStatus.completed.name,
-        'rescheduleStatus': RescheduleStatus.none.name,
-        'investigations': [],
-        'investigationNotes': null,
-      },
-      {
-        'dateTime': DateTime(now.year, now.month, now.day - 10, 11, 0)
-            .millisecondsSinceEpoch,
-        'clinic': 'Dietetics Clinic',
-        'doctorName': 'Dr. Priya Jayasinghe',
-        'requestDetails': 'Dietary consultation and nutrition plan',
-        'status': AppointmentStatus.missed.name,
-        'rescheduleStatus': RescheduleStatus.none.name,
-        'investigations': [],
-        'investigationNotes': null,
-      },
-    ];
-    final batch = _firestore.batch();
-    for (final appt in appointments) {
-      final ref = _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(userId)
-          .collection(AppConstants.appointmentsCollection)
-          .doc();
-      batch.set(ref, appt);
-    }
-    await batch.commit();
-  }
+
 
   // ─── Check-Ins ────────────────────────────────────────────────────────────
 
@@ -253,5 +131,55 @@ class MedicationService {
         .map((snap) => snap.docs
         .map((d) => CheckInModel.fromMap(d.data(), d.id))
         .toList());
+  }
+
+  Future<void> deleteDemoDataIfExists(String userId) async {
+    try {
+      debugPrint('Cleanup: Checking for previously seeded demo data for user: $userId');
+      // 1. Delete default medications
+      final medSnap = await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
+          .collection(AppConstants.medicationsCollection)
+          .where('name', whereIn: ['Metformin', 'Lisinopril', 'Aspirin'])
+          .get();
+
+      if (medSnap.docs.isNotEmpty) {
+        final batch = _firestore.batch();
+        for (final doc in medSnap.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+        debugPrint('Cleanup: Deleted ${medSnap.docs.length} demo medications.');
+      } else {
+        debugPrint('Cleanup: No demo medications found.');
+      }
+
+      // 2. Delete default appointments
+      final apptSnap = await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
+          .collection(AppConstants.appointmentsCollection)
+          .where('doctorName', whereIn: [
+            'Dr. Nimal Perera',
+            'Dr. Kamala Silva',
+            'Dr. Ruwan Fernando',
+            'Dr. Priya Jayasinghe'
+          ])
+          .get();
+
+      if (apptSnap.docs.isNotEmpty) {
+        final batch = _firestore.batch();
+        for (final doc in apptSnap.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+        debugPrint('Cleanup: Deleted ${apptSnap.docs.length} demo appointments.');
+      } else {
+        debugPrint('Cleanup: No demo appointments found.');
+      }
+    } catch (e) {
+      debugPrint('Cleanup Error: Failed to delete demo data: $e');
+    }
   }
 }
