@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../providers/auth_provider.dart';
+
 import '../../providers/medication_provider.dart';
 import '../../models/medication_model.dart';
 import '../../utils/app_colors.dart';
@@ -17,9 +17,8 @@ class MyMedicationScreen extends StatefulWidget {
 class _MyMedicationScreenState extends State<MyMedicationScreen> {
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
     final medProvider = context.watch<MedicationProvider>();
-    final medications = medProvider.medications;
+    final medications = medProvider.medications.where((m) => m.name.trim().isNotEmpty).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
