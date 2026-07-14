@@ -178,6 +178,28 @@ class MedicationService {
       } else {
         debugPrint('Cleanup: No demo appointments found.');
       }
+      // 3. Delete empty/invalid name medications
+      final invalidMedSnap = await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
+          .collection(AppConstants.medicationsCollection)
+          .get();
+
+      if (invalidMedSnap.docs.isNotEmpty) {
+        final batch = _firestore.batch();
+        int invalidCount = 0;
+        for (final doc in invalidMedSnap.docs) {
+          final name = doc.data()['name'] as String?;
+          if (name == null || name.trim().isEmpty) {
+            batch.delete(doc.reference);
+            invalidCount++;
+          }
+        }
+        if (invalidCount > 0) {
+          await batch.commit();
+          debugPrint('Cleanup: Deleted $invalidCount invalid/empty medications.');
+        }
+      }
     } catch (e) {
       debugPrint('Cleanup Error: Failed to delete demo data: $e');
     }

@@ -1,6 +1,9 @@
-﻿import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 
@@ -51,6 +54,26 @@ class AuthService {
         privacyAccepted: false,
       );
       await docRef.set(user.toMap());
+    }
+
+    // Call the web backend to link the Firebase UID to the patient record
+    try {
+      final url = Uri.parse('${AppConstants.webBackendUrl}/api/auth/link-firebase');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'firebase_uid': firebaseUser.uid,
+          'email': firebaseUser.email,
+        }),
+      );
+      if (response.statusCode == 200) {
+        debugPrint('Successfully linked Firebase UID to backend');
+      } else {
+        debugPrint('Backend link-firebase returned status: ${response.statusCode}, body: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Failed to link Firebase UID to backend: $e');
     }
   }
 

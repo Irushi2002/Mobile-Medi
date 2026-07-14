@@ -35,6 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final now = DateTime.now();
     final entries = <_ScheduledMedEntry>[];
     for (final med in medications) {
+      if (med.name.trim().isEmpty) continue;
       if (!med.isScheduledForDate(now)) continue;
       for (final t in med.scheduledTimes) {
         final todayTime =
