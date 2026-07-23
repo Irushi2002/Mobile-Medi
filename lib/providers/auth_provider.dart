@@ -26,13 +26,30 @@ class AuthProvider extends ChangeNotifier {
     if (firebaseUser == null) {
       _status = AuthStatus.unauthenticated;
       _user = null;
+      notifyListeners();
     } else {
       _status = AuthStatus.loading;
       notifyListeners();
-      _user = await _authService.getUserData(firebaseUser.uid);
+
+      final userData = await _authService.getUserData(firebaseUser.uid);
+      if (userData == null) {
+        // Only reject if we definitively know email is NOT registered.
+        // If null (network/permission error), allow through to avoid locking out valid users.
+        final isRegistered = await _authService.isEmailRegisteredDirectly(firebaseUser.email ?? '');
+        if (isRegistered == false) {
+          // Definitely not registered — force sign out
+          await _authService.signOut();
+          _status = AuthStatus.unauthenticated;
+          _user = null;
+          notifyListeners();
+          return;
+        }
+      }
+
+      _user = userData;
       _status = AuthStatus.authenticated;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<bool> signInWithGoogle() async {
@@ -56,6 +73,9 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _status = AuthStatus.error;
       _errorMessage = e.toString();
+      if (_errorMessage!.startsWith('Exception: ')) {
+        _errorMessage = _errorMessage!.substring(11);
+      }
       notifyListeners();
       return false;
     }

@@ -76,7 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final nextMed = _getNextMedication(entries);
     final upcomingAppts = medProvider.upcomingAppointments;
     final nextAppointment = upcomingAppts.isNotEmpty &&
-            upcomingAppts.first.dateTime.isBefore(DateTime.now().add(const Duration(days: 7)))
+            upcomingAppts.first.dateTime.isBefore(DateTime.now().add(const Duration(days: 5)))
         ? upcomingAppts.first
         : null;
 
@@ -221,6 +221,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+            // ── Investigation Report Reminder Banner ───────────────
+            if (nextAppointment != null && nextAppointment.hasInvestigations)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.warning.withOpacity(0.5),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.warning.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppColors.warning,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Appointment Report Reminder',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFE65100),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'You have an appointment with ${nextAppointment.doctorName} in ${nextAppointment.dateTime.difference(DateTime.now()).inDays == 0 ? "today" : "${nextAppointment.dateTime.difference(DateTime.now()).inDays} days"}. Please make sure to bring these reports:',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textPrimary,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ...nextAppointment.investigations.map(
+                                (inv) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.check_circle_outline,
+                                        size: 14,
+                                        color: AppColors.warning,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        inv,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
             // ── Next Appointment Card ──────────────────────────────
             if (nextAppointment != null)

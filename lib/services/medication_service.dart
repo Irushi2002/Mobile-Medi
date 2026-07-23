@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/medication_model.dart';
@@ -92,6 +94,32 @@ class MedicationService {
         .doc(checkIn.userId)
         .collection(AppConstants.checkInsCollection)
         .add(checkIn.toMap());
+
+    // Sync to PostgreSQL backend
+    try {
+      final url = Uri.parse('${AppConstants.webBackendUrl}/api/mobile/checkin');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': AppConstants.apiSecretKey,
+        },
+        body: jsonEncode({
+          'firebase_uid': checkIn.userId,
+          'date': checkIn.date.toIso8601String(),
+          'symptoms': checkIn.symptoms,
+          'health_status': checkIn.healthStatus.name,
+          'notes': checkIn.additionalNotes ?? '',
+        }),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        debugPrint('Successfully synced check-in to web backend');
+      } else {
+        debugPrint('Failed to sync check-in to web backend: ${response.statusCode}, body: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error syncing check-in to web backend: $e');
+    }
   }
 
   Future<void> updateCheckIn(
@@ -102,6 +130,32 @@ class MedicationService {
         .collection(AppConstants.checkInsCollection)
         .doc(checkInId)
         .update(checkIn.toMap());
+
+    // Sync updated check-in to PostgreSQL backend (triggers backend upsert)
+    try {
+      final url = Uri.parse('${AppConstants.webBackendUrl}/api/mobile/checkin');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': AppConstants.apiSecretKey,
+        },
+        body: jsonEncode({
+          'firebase_uid': userId,
+          'date': checkIn.date.toIso8601String(),
+          'symptoms': checkIn.symptoms,
+          'health_status': checkIn.healthStatus.name,
+          'notes': checkIn.additionalNotes ?? '',
+        }),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        debugPrint('Successfully synced updated check-in to web backend');
+      } else {
+        debugPrint('Failed to sync updated check-in to web backend: ${response.statusCode}, body: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error syncing updated check-in to web backend: $e');
+    }
   }
 
   Future<CheckInModel?> getTodayCheckIn(String userId) async {

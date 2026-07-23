@@ -18,6 +18,29 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  Future<bool?> _checkEmailRegistered(String email) async {
+    try {
+      final doc = await _firestore
+          .collection('registered_emails')
+          .doc(email.toLowerCase().trim())
+          .get()
+          .timeout(const Duration(seconds: 10));
+      if (doc.exists) {
+        final data = doc.data();
+        return data?['registered'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error checking email registration in Firestore: $e');
+      return null;
+    }
+  }
+
+  Future<bool?> isEmailRegisteredDirectly(String email) async {
+    if (email.isEmpty) return false;
+    return await _checkEmailRegistered(email);
+  }
+
   Future<UserCredential?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -31,7 +54,19 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
+      // Authenticate with Firebase first to gain read access under Firestore security rules
       final userCredential = await _auth.signInWithCredential(credential);
+
+      final isRegistered = await _checkEmailRegistered(googleUser.email);
+      if (isRegistered == null) {
+        await signOut();
+        throw Exception('Connection error. Please check your internet connection.');
+      }
+      if (!isRegistered) {
+        await signOut();
+        throw Exception('Your email (${googleUser.email}) is not registered in the system. Please ask the hospital staff to register your email.');
+      }
+
       await _createUserIfNotExists(userCredential.user!);
       return userCredential;
     } catch (e) {
