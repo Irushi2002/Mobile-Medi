@@ -33,7 +33,13 @@ class MedicationModel {
           .map((t) => DateTime.fromMillisecondsSinceEpoch(t as int))
           .toList(),
       instructions: map['instructions'],
-      prescribedBy: map['prescribedBy'],
+      prescribedBy: () {
+        final name = map['prescribedBy'] ?? '';
+        if (name.isNotEmpty && !name.toLowerCase().startsWith('dr.')) {
+          return 'Dr. $name';
+        }
+        return name;
+      }(),
       startDate: DateTime.fromMillisecondsSinceEpoch(map['startDate'] as int),
       endDate: map['endDate'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['endDate'] as int)
