@@ -36,7 +36,13 @@ class AppointmentModel {
       id: id,
       dateTime: DateTime.fromMillisecondsSinceEpoch(map['dateTime'] as int),
       clinic: map['clinic'] ?? '',
-      doctorName: map['doctorName'] ?? '',
+      doctorName: () {
+        final name = map['doctorName'] ?? '';
+        if (name.isNotEmpty && !name.toLowerCase().startsWith('dr.')) {
+          return 'Dr. $name';
+        }
+        return name;
+      }(),
       requestDetails: map['requestDetails'] ?? '',
       status: AppointmentStatus.values.firstWhere(
             (e) => e.name == map['status'],
