@@ -144,12 +144,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.red),
                             ),
                             const SizedBox(width: 12),
-                            const Text(
-                              'Continue with Google',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                            const Flexible(
+                              child: Text(
+                                'Continue with Google',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ),
                           ],
