@@ -35,17 +35,44 @@ class AppointmentCard extends StatelessWidget {
     }
   }
 
+  // ── Helper: humanise a time string like "09:00" → "09:00 AM" ─────────────
+  String _formatTime(String? timeStr) {
+    if (timeStr == null || timeStr.isEmpty) return timeStr ?? '';
+    try {
+      final parts = timeStr.split(':');
+      final h = int.parse(parts[0]);
+      final m = int.parse(parts[1]);
+      final dt = DateTime(2000, 1, 1, h, m);
+      return DateFormat('hh:mm a').format(dt);
+    } catch (_) {
+      return timeStr;
+    }
+  }
+
+  // ── Helper: humanise a date string "2026-08-05" → "Aug 05, 2026" ─────────
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return dateStr ?? '';
+    try {
+      final dt = DateTime.parse(dateStr);
+      return DateFormat('MMM dd, yyyy').format(dt);
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rs = appointment.rescheduleStatus;
+
     final canReschedule =
         (appointment.status == AppointmentStatus.upcoming ||
             appointment.status == AppointmentStatus.missed) &&
-            appointment.rescheduleStatus == RescheduleStatus.none;
+            rs == RescheduleStatus.none;
 
-    final isRequested =
-        appointment.rescheduleStatus == RescheduleStatus.requested;
-    final isAccepted =
-        appointment.rescheduleStatus == RescheduleStatus.accepted;
+    final isRequested = rs == RescheduleStatus.requested;
+    final isApproved  = rs == RescheduleStatus.approved || rs == RescheduleStatus.accepted;
+    final isRejected  = rs == RescheduleStatus.rejected;
+    final isAlternative = rs == RescheduleStatus.alternativeSuggested;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -54,7 +81,6 @@ class AppointmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border, width: 0.8),
       ),
-      // Clip everything inside the rounded border
       clipBehavior: Clip.hardEdge,
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -179,98 +205,166 @@ class AppointmentCard extends StatelessWidget {
               ],
             ),
 
-            // ── Reschedule accepted ────────────────────────────────
-            if (isAccepted && appointment.newDateTime != null) ...[
+            // ── Status banners ─────────────────────────────────────
+
+            // Approved
+            if (isApproved) ...[
               const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.stable.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: AppColors.stable.withOpacity(0.3)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.check_circle,
-                        color: AppColors.stable, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Rescheduled to ${DateFormat('MMM dd, yyyy – hh:mm a').format(appointment.newDateTime!)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.stable,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
+              _StatusBanner(
+                color: AppColors.stable,
+                icon: Icons.check_circle,
+                child: Text(
+                  appointment.staffMessage ??
+                      (appointment.newDateTime != null
+                          ? 'Rescheduled to ${DateFormat('MMM dd, yyyy – hh:mm a').format(appointment.newDateTime!)}'
+                          : 'Your reschedule request has been approved.'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.stable,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ]
 
-            // ── Reschedule requested (pending) ────────────────────
+            // Pending / Requested
             else if (isRequested) ...[
               const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: AppColors.warning.withOpacity(0.3)),
+              const _StatusBanner(
+                color: AppColors.warning,
+                icon: Icons.schedule,
+                child: Text(
+                  'Reschedule request submitted — awaiting staff response',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
                 ),
-                child: Row(
+              ),
+            ]
+
+            // Rejected
+            else if (isRejected) ...[
+              const SizedBox(height: 10),
+              _StatusBanner(
+                color: AppColors.missed,
+                icon: Icons.cancel,
+                child: Text(
+                  appointment.staffMessage ?? 'Your rescheduling request has been rejected.',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.missed,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ]
+
+            // Alternative time suggested
+            else if (isAlternative) ...[
+              const SizedBox(height: 10),
+              _StatusBanner(
+                color: const Color(0xFFFF9800),
+                icon: Icons.event_available,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.schedule,
-                        color: AppColors.warning, size: 16),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Reschedule request sent — awaiting doctor approval',
-                        style: TextStyle(
+                    if (appointment.staffMessage != null)
+                      Text(
+                        appointment.staffMessage!,
+                        style: const TextStyle(
                           fontSize: 12,
-                          color: AppColors.warning,
+                          color: Color(0xFFE65100),
                           fontWeight: FontWeight.w500,
                           height: 1.4,
                         ),
+                      )
+                    else ...[
+                      const Text(
+                        'Staff suggested an alternative time:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFFE65100),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
+                      if (appointment.suggestedDate != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_formatDate(appointment.suggestedDate)} at ${_formatTime(appointment.suggestedTime)}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFE65100),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ],
                   ],
                 ),
               ),
             ]
 
-            // ── Request reschedule button ─────────────────────────
+            // Request Reschedule button
             else if (canReschedule && onRequestReschedule != null) ...[
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: onRequestReschedule,
-                    icon: const Icon(Icons.event_repeat, size: 16),
-                    label: const Text('Request Reschedule'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      textStyle: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onRequestReschedule,
+                  icon: const Icon(Icons.event_repeat, size: 16),
+                  label: const Text('Request Reschedule'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    textStyle: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
-              ],
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Reusable status banner widget ─────────────────────────────────────────────
+class _StatusBanner extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final Widget child;
+
+  const _StatusBanner({
+    required this.color,
+    required this.icon,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 8),
+          Expanded(child: child),
+        ],
       ),
     );
   }
