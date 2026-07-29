@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import '../models/medication_model.dart';
 import '../models/appointment_model.dart';
 import '../services/medication_service.dart';
+import '../services/notification_service.dart';
+import '../providers/settings_provider.dart';
 
 class MedicationProvider extends ChangeNotifier {
   final MedicationService _service = MedicationService();
+  final NotificationService _notifications = NotificationService();
+
+  SettingsProvider? _settingsProvider;
 
   List<MedicationModel> _medications = [];
   List<AppointmentModel> _appointments = [];
@@ -16,35 +21,75 @@ class MedicationProvider extends ChangeNotifier {
   List<MedicationModel> get medications => _medications;
   List<AppointmentModel> get appointments => _appointments;
 
-  void initialize(String userId) {
+  /// Call this whenever SettingsProvider changes so medication/appointment
+  /// notifications can be re-scheduled with the correct flags.
+  void updateSettings(SettingsProvider settings) {
+    _settingsProvider = settings;
+    // Re-schedule with the latest settings
+    if (_medications.isNotEmpty) {
+      _notifications.scheduleAllMedicationNotifications(
+        _medications,
+        notificationsEnabled: settings.notificationsEnabled,
+        soundEnabled: settings.soundEnabled,
+      );
+    }
+    if (_appointments.isNotEmpty) {
+      _notifications.scheduleAllAppointmentNotifications(
+        _appointments,
+        notificationsEnabled: settings.notificationsEnabled,
+        soundEnabled: settings.soundEnabled,
+      );
+    }
+  }
+
+  Future<void> initialize(String userId) async {
     _medSubscription?.cancel();
     _apptSubscription?.cancel();
     _overdueTimer?.cancel();
+
+    // Request notification permissions on Android 13+ / iOS
+    await _notifications.requestPermissions();
 
     // Clean up any remaining/previously seeded demo data
     _service.deleteDemoDataIfExists(userId);
 
     _medSubscription =
-        _service.getMedicationsStream(userId).listen((meds) {
-          _medications = meds;
-          notifyListeners();
-        });
+        _service.getMedicationsStream(userId).listen((meds) async {
+      _medications = meds;
+      notifyListeners();
+
+      // Reschedule all medication notifications whenever Firestore data changes
+      await _notifications.scheduleAllMedicationNotifications(
+        meds,
+        notificationsEnabled:
+            _settingsProvider?.notificationsEnabled ?? true,
+        soundEnabled: _settingsProvider?.soundEnabled ?? true,
+      );
+    });
 
     _apptSubscription =
-        _service.getAppointmentsStream(userId).listen((appts) {
-          _appointments = appts;
-          notifyListeners();
-        });
+        _service.getAppointmentsStream(userId).listen((appts) async {
+      _appointments = appts;
+      notifyListeners();
+
+      // Reschedule all appointment notifications whenever Firestore data changes
+      await _notifications.scheduleAllAppointmentNotifications(
+        appts,
+        notificationsEnabled:
+            _settingsProvider?.notificationsEnabled ?? true,
+        soundEnabled: _settingsProvider?.soundEnabled ?? true,
+      );
+    });
 
     // Check overdue every minute
     _overdueTimer = Timer.periodic(
       const Duration(minutes: 1),
-          (_) => _checkAndMarkOverdue(userId),
+      (_) => _checkAndMarkOverdue(userId),
     );
 
     // Also check immediately
-    Future.delayed(const Duration(seconds: 5),
-            () => _checkAndMarkOverdue(userId));
+    Future.delayed(
+        const Duration(seconds: 5), () => _checkAndMarkOverdue(userId));
   }
 
   void _checkAndMarkOverdue(String userId) {
@@ -53,9 +98,10 @@ class MedicationProvider extends ChangeNotifier {
       if (!med.isScheduledForDate(now)) continue;
       for (final time in med.scheduledTimes) {
         final todayTime =
-        DateTime(now.year, now.month, now.day, time.hour, time.minute);
+            DateTime(now.year, now.month, now.day, time.hour, time.minute);
         final timeKey =
-            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}'
+            '_${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
         final currentStatus =
             med.takenStatus[timeKey] ?? MedicationStatus.pending;
@@ -78,14 +124,13 @@ class MedicationProvider extends ChangeNotifier {
       if (!med.isScheduledForDate(now)) continue;
       for (final t in med.scheduledTimes) {
         final todayTime =
-        DateTime(now.year, now.month, now.day, t.hour, t.minute);
+            DateTime(now.year, now.month, now.day, t.hour, t.minute);
         final timeKey =
-            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-        final status =
-            med.takenStatus[timeKey] ?? MedicationStatus.pending;
-        if (status == MedicationStatus.pending &&
-            todayTime.isAfter(now)) {
-          if (nextTime == null || todayTime.isBefore(nextTime!)) {
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}'
+            '_${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+        final status = med.takenStatus[timeKey] ?? MedicationStatus.pending;
+        if (status == MedicationStatus.pending && todayTime.isAfter(now)) {
+          if (nextTime == null || todayTime.isBefore(nextTime)) {
             nextTime = todayTime;
             next = med;
           }
@@ -102,9 +147,9 @@ class MedicationProvider extends ChangeNotifier {
       if (!med.isScheduledForDate(now)) continue;
       for (final t in med.scheduledTimes) {
         final todayTime =
-        DateTime(now.year, now.month, now.day, t.hour, t.minute);
+            DateTime(now.year, now.month, now.day, t.hour, t.minute);
         if (todayTime.isAfter(now)) {
-          if (nextTime == null || todayTime.isBefore(nextTime!)) {
+          if (nextTime == null || todayTime.isBefore(nextTime)) {
             nextTime = todayTime;
           }
         }
@@ -129,8 +174,7 @@ class MedicationProvider extends ChangeNotifier {
     final now = DateTime.now();
     return _appointments
         .where((a) =>
-    a.status == AppointmentStatus.upcoming &&
-        a.dateTime.isAfter(now))
+            a.status == AppointmentStatus.upcoming && a.dateTime.isAfter(now))
         .toList()
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
   }

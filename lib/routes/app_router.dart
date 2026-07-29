@@ -9,6 +9,7 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/profile/update_profile_screen.dart';
 import '../screens/checkin/daily_checkin_screen.dart';
 import '../screens/support/privacy_support_screen.dart';
+import '../screens/profile/notification_settings_screen.dart';
 import '../screens/splash_screen.dart';
 
 class AppRouter {
@@ -23,6 +24,7 @@ class AppRouter {
   static const String updateProfile = '/update-profile';
   static const String dailyCheckIn = '/daily-check-in';
   static const String privacySupport = '/privacy-support';
+  static const String notificationSettings = '/notification-settings';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -48,6 +50,8 @@ class AppRouter {
         return _route(const DailyCheckInScreen());
       case privacySupport:
         return _route(const PrivacySupportScreen());
+      case notificationSettings:
+        return _route(const NotificationSettingsScreen());
       default:
         return _route(const SplashScreen());
     }
