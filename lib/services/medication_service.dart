@@ -84,6 +84,99 @@ class MedicationService {
     });
   }
 
+  // ─── Rescheduling with slot selection (new full workflow) ─────────────────
+
+  /// Fetches available (unbooked) future time slots for a doctor from the backend.
+  /// [appointmentId] is used to look up the doctor and exclude the patient's own current slot.
+  Future<List<Map<String, String>>> fetchAvailableSlots(
+      String doctorNameOrId, String appointmentId) async {
+    try {
+      final uri = Uri.parse(
+        '${AppConstants.webBackendUrl}/api/mobile/available-slots'
+            '?appointmentId=${Uri.encodeQueryComponent(appointmentId)}'
+            '&doctorName=${Uri.encodeQueryComponent(doctorNameOrId)}',
+      );
+      final response = await http.get(
+        uri,
+        headers: {'x-api-key': AppConstants.apiSecretKey},
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map<Map<String, String>>((s) => {
+          'date': s['date'].toString(),
+          'time': s['time'].toString(),
+        }).toList();
+      }
+      debugPrint('[fetchAvailableSlots] Non-200: ${response.statusCode} ${response.body}');
+      return [];
+    } catch (e) {
+      debugPrint('[fetchAvailableSlots] Error: $e');
+      return [];
+    }
+  }
+
+  /// Submits a reschedule request with a specific slot to the backend,
+  /// and updates the Firestore appointment so the mobile stream reflects it.
+  Future<bool> requestRescheduleWithSlot(
+      String userId,
+      String appointmentId,
+      String requestedDate,
+      String requestedTime,
+      String reason) async {
+    // 1. Post to the backend (creates/updates DB record with date, time, reason)
+    try {
+      final url = Uri.parse('${AppConstants.webBackendUrl}/api/mobile/reschedule-request');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': AppConstants.apiSecretKey,
+        },
+        body: jsonEncode({
+          'firebase_uid': userId,
+          'appointment_id': appointmentId,
+          'requestedDate': requestedDate,
+          'requestedTime': requestedTime,
+          'note': reason,
+        }),
+      );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        debugPrint('[requestRescheduleWithSlot] Backend error: ${response.statusCode} ${response.body}');
+        // Fall through to Firestore update even if backend has a non-fatal error
+      } else {
+        debugPrint('[requestRescheduleWithSlot] Backend success');
+      }
+    } catch (e) {
+      debugPrint('[requestRescheduleWithSlot] Backend call failed: $e');
+      // Don't abort — the Firestore update below will still mark it pending
+    }
+
+    // 2. Update Firestore so the real-time stream shows pending status immediately
+    try {
+      await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(userId)
+          .collection(AppConstants.appointmentsCollection)
+          .doc(appointmentId)
+          .update({
+        'rescheduleStatus': 'requested',
+        'rescheduleRequestedAt': DateTime.now().millisecondsSinceEpoch,
+        'rescheduleNote': reason,
+        'rescheduleRequestedDate': requestedDate,
+        'rescheduleRequestedTime': requestedTime,
+        // Clear any previous staff response
+        'staffMessage': null,
+        'suggestedDate': null,
+        'suggestedTime': null,
+      });
+      debugPrint('[requestRescheduleWithSlot] Firestore updated for appointment $appointmentId');
+      return true;
+    } catch (e) {
+      debugPrint('[requestRescheduleWithSlot] Firestore update failed: $e');
+      return false;
+    }
+  }
+
 
 
   // ─── Check-Ins ────────────────────────────────────────────────────────────
