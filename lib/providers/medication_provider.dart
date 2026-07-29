@@ -85,7 +85,7 @@ class MedicationProvider extends ChangeNotifier {
             med.takenStatus[timeKey] ?? MedicationStatus.pending;
         if (status == MedicationStatus.pending &&
             todayTime.isAfter(now)) {
-          if (nextTime == null || todayTime.isBefore(nextTime!)) {
+          if (nextTime == null || todayTime.isBefore(nextTime)) {
             nextTime = todayTime;
             next = med;
           }
@@ -104,7 +104,7 @@ class MedicationProvider extends ChangeNotifier {
         final todayTime =
         DateTime(now.year, now.month, now.day, t.hour, t.minute);
         if (todayTime.isAfter(now)) {
-          if (nextTime == null || todayTime.isBefore(nextTime!)) {
+          if (nextTime == null || todayTime.isBefore(nextTime)) {
             nextTime = todayTime;
           }
         }
@@ -150,6 +150,23 @@ class MedicationProvider extends ChangeNotifier {
   Future<void> requestReschedule(
       String userId, String appointmentId, String note) async {
     await _service.requestReschedule(userId, appointmentId, note);
+  }
+
+  /// Fetches unbooked future slots for a doctor (used by the slot-picker).
+  Future<List<Map<String, String>>> fetchAvailableSlots(
+      String doctorId, String appointmentId) async {
+    return _service.fetchAvailableSlots(doctorId, appointmentId);
+  }
+
+  /// Submits a reschedule request with a selected date, time and reason.
+  Future<bool> requestRescheduleWithSlot(
+      String userId,
+      String appointmentId,
+      String requestedDate,
+      String requestedTime,
+      String reason) async {
+    return _service.requestRescheduleWithSlot(
+        userId, appointmentId, requestedDate, requestedTime, reason);
   }
 
   @override
