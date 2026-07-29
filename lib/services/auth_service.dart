@@ -101,7 +101,7 @@ class AuthService {
           'firebase_uid': firebaseUser.uid,
           'email': firebaseUser.email,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         debugPrint('Successfully linked Firebase UID to backend');
       } else {
