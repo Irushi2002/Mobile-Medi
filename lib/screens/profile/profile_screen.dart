@@ -176,6 +176,13 @@ class ProfileScreen extends StatelessWidget {
                   Navigator.pushNamed(context, AppRouter.updateProfile),
             ),
             _SettingsTile(
+              icon: Icons.notifications_outlined,
+              label: 'Notification Settings',
+              color: AppColors.primaryLight,
+              onTap: () => Navigator.pushNamed(
+                  context, AppRouter.notificationSettings),
+            ),
+            _SettingsTile(
               icon: Icons.history_rounded,
               label: 'Medication History',
               color: AppColors.accent,
