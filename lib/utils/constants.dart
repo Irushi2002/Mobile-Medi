@@ -15,7 +15,7 @@ class AppConstants {
   // For real device on same WiFi: 'http://192.168.x.x:5000'
   // For deployed backend: 'https://your-backend.railway.app'
   //static const String webBackendUrl = 'http://10.0.2.2:5000';
-  static const String webBackendUrl = 'http://172.30.56.152:5000';
+  static const String webBackendUrl = 'http://10.253.140.4:5000';
 
   // ── API Secret Key (must match CLOUD_FUNCTION_SECRET in server .env) ─────
   static const String apiSecretKey = '5cc8745ab3c18fbf501a27dd04b7b981';
