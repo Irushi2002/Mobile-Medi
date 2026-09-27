@@ -177,6 +177,34 @@ class MedicationService {
     }
   }
 
+  Future<bool> replyToAlternativeReschedule(String userId, String appointmentId, String action) async {
+    try {
+      final url = Uri.parse('${AppConstants.webBackendUrl}/api/mobile/reschedule-reply');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': AppConstants.apiSecretKey,
+        },
+        body: jsonEncode({
+          'firebase_uid': userId,
+          'appointment_id': appointmentId,
+          'action': action,
+        }),
+      );
+      if (response.statusCode == 200) {
+        debugPrint('[replyToAlternativeReschedule] Backend success');
+        return true;
+      } else {
+        debugPrint('[replyToAlternativeReschedule] Backend error: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('[replyToAlternativeReschedule] Request failed: $e');
+      return false;
+    }
+  }
+
 
 
   // ─── Check-Ins ────────────────────────────────────────────────────────────
