@@ -67,12 +67,16 @@ class AppointmentCard extends StatelessWidget {
     final today = DateTime.now();
     final apptDay = DateTime(appointment.dateTime.year, appointment.dateTime.month, appointment.dateTime.day);
     final currentDay = DateTime(today.year, today.month, today.day);
-    final isSameDayOrPast = apptDay.isBefore(currentDay) || apptDay.isAtSameMomentAs(currentDay);
-
-    final canReschedule =
-        (appointment.status == AppointmentStatus.upcoming ||
-            appointment.status == AppointmentStatus.missed) &&
-            rs == RescheduleStatus.none && !isSameDayOrPast;
+    
+    bool canReschedule = false;
+    if (rs == RescheduleStatus.none) {
+      if (appointment.status == AppointmentStatus.missed) {
+        final diff = currentDay.difference(apptDay).inDays;
+        canReschedule = diff <= 3;
+      } else if (appointment.status == AppointmentStatus.upcoming) {
+        canReschedule = apptDay.isAfter(currentDay);
+      }
+    }
 
     final isRequested = rs == RescheduleStatus.requested;
     final isApproved  = rs == RescheduleStatus.approved || rs == RescheduleStatus.accepted;
