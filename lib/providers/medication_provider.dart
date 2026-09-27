@@ -211,6 +211,10 @@ class MedicationProvider extends ChangeNotifier {
         userId, appointmentId, requestedDate, requestedTime, reason);
   }
 
+  Future<bool> replyToAlternativeReschedule(String userId, String appointmentId, String action) async {
+    return _service.replyToAlternativeReschedule(userId, appointmentId, action);
+  }
+
   @override
   void dispose() {
     _medSubscription?.cancel();

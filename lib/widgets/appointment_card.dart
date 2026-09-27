@@ -6,11 +6,8 @@ import '../utils/app_colors.dart';
 class AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
   final VoidCallback? onRequestReschedule;
-
-  const AppointmentCard({
-    super.key,
-    required this.appointment,
-    this.onRequestReschedule,
+    this.onAcceptAlternative,
+    this.onRejectAlternative,
   });
 
   Color get _statusColor {
@@ -64,10 +61,19 @@ class AppointmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final rs = appointment.rescheduleStatus;
 
-    final canReschedule =
-        (appointment.status == AppointmentStatus.upcoming ||
-            appointment.status == AppointmentStatus.missed) &&
-            rs == RescheduleStatus.none;
+    final today = DateTime.now();
+    final apptDay = DateTime(appointment.dateTime.year, appointment.dateTime.month, appointment.dateTime.day);
+    final currentDay = DateTime(today.year, today.month, today.day);
+    
+    bool canReschedule = false;
+    if (rs == RescheduleStatus.none) {
+      if (appointment.status == AppointmentStatus.missed) {
+        final diff = currentDay.difference(apptDay).inDays;
+        canReschedule = diff <= 3;
+      } else if (appointment.status == AppointmentStatus.upcoming) {
+        canReschedule = apptDay.isAfter(currentDay);
+      }
+    }
 
     final isRequested = rs == RescheduleStatus.requested;
     final isApproved  = rs == RescheduleStatus.approved || rs == RescheduleStatus.accepted;
@@ -306,6 +312,36 @@ class AppointmentCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onAcceptAlternative != null && onRejectAlternative != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onRejectAlternative,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Reject'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onAcceptAlternative,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Accept'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ]
 
             // Request Reschedule button
@@ -369,3 +405,4 @@ class _StatusBanner extends StatelessWidget {
     );
   }
 }
+
