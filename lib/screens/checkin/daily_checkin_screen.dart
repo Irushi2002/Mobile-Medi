@@ -90,11 +90,11 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
     setState(() => _isLoading = true);
 
     if (_isEditMode && _existingCheckIn != null) {
-      // Update existing check-in
-      final updated = CheckInModel(
-        id: _existingCheckIn!.id,
+      // Submit as a new check-in with the current time, preserving the old one
+      final newCheckIn = CheckInModel(
+        id: '',
         userId: uid,
-        date: _existingCheckIn!.date,
+        date: DateTime.now(),
         symptoms: _selectedSymptoms.toList(),
         healthStatus: _healthStatus,
         additionalNotes: _notesController.text.trim().isEmpty
@@ -102,16 +102,16 @@ class _DailyCheckInScreenState extends State<DailyCheckInScreen> {
             : _notesController.text.trim(),
         submittedToDoctor: true,
       );
-      await _service.updateCheckIn(uid, _existingCheckIn!.id, updated);
+      await _service.submitCheckIn(newCheckIn);
       setState(() {
-        _existingCheckIn = updated;
+        _existingCheckIn = newCheckIn;
         _isEditMode = false;
         _isLoading = false;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Check-in updated successfully'),
+            content: Text('Updated check-in submitted as new log'),
             backgroundColor: AppColors.stable,
           ),
         );

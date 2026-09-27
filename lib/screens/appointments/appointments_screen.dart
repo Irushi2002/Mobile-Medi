@@ -33,6 +33,32 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   // ── Slot-Picker Reschedule Flow ──────────────────────────────────────────
 
   /// Step 1 — Fetch available slots, then show the date+slot picker sheet.
+  Future<void> _handleAlternativeReply(BuildContext context, AppointmentModel appointment, String action) async {
+    final uid = context.read<AuthProvider>().user?.uid;
+    if (uid == null) return;
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final success = await context
+        .read<MedicationProvider>()
+        .replyToAlternativeReschedule(uid, appointment.id, action);
+
+    if (context.mounted) {
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? 'Successfully updated appointment' : 'Failed to process request'),
+          backgroundColor: success ? AppColors.stable : AppColors.missed,
+        ),
+      );
+    }
+  }
+
   Future<void> _startRescheduleFlow(
       BuildContext context, AppointmentModel appointment) async {
     final uid = context.read<AuthProvider>().user?.uid;
@@ -245,6 +271,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                       appointment: a,
                       onRequestReschedule: () =>
                           _startRescheduleFlow(context, a),
+                      onAcceptAlternative: () =>
+                          _handleAlternativeReply(context, a, 'accept'),
+                      onRejectAlternative: () =>
+                          _handleAlternativeReply(context, a, 'reject'),
                     )),
                   ],
                 ),
@@ -288,6 +318,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     appointment: a,
                     onRequestReschedule: () =>
                         _startRescheduleFlow(context, a),
+                    onAcceptAlternative: () =>
+                        _handleAlternativeReply(context, a, 'accept'),
+                    onRejectAlternative: () =>
+                        _handleAlternativeReply(context, a, 'reject'),
                   ))
                       .toList(),
                 ),
@@ -337,6 +371,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     appointment: a,
                     onRequestReschedule: () =>
                         _startRescheduleFlow(context, a),
+                    onAcceptAlternative: () =>
+                        _handleAlternativeReply(context, a, 'accept'),
+                    onRejectAlternative: () =>
+                        _handleAlternativeReply(context, a, 'reject'),
                   ))
                       .toList(),
                 ),
@@ -839,3 +877,4 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
     );
   }
 }
+
