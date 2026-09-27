@@ -64,10 +64,15 @@ class AppointmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final rs = appointment.rescheduleStatus;
 
+    final today = DateTime.now();
+    final apptDay = DateTime(appointment.dateTime.year, appointment.dateTime.month, appointment.dateTime.day);
+    final currentDay = DateTime(today.year, today.month, today.day);
+    final isSameDayOrPast = apptDay.isBefore(currentDay) || apptDay.isAtSameMomentAs(currentDay);
+
     final canReschedule =
         (appointment.status == AppointmentStatus.upcoming ||
             appointment.status == AppointmentStatus.missed) &&
-            rs == RescheduleStatus.none;
+            rs == RescheduleStatus.none && !isSameDayOrPast;
 
     final isRequested = rs == RescheduleStatus.requested;
     final isApproved  = rs == RescheduleStatus.approved || rs == RescheduleStatus.accepted;
