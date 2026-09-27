@@ -6,11 +6,15 @@ import '../utils/app_colors.dart';
 class AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
   final VoidCallback? onRequestReschedule;
+  final VoidCallback? onAcceptAlternative;
+  final VoidCallback? onRejectAlternative;
 
   const AppointmentCard({
     super.key,
     required this.appointment,
     this.onRequestReschedule,
+    this.onAcceptAlternative,
+    this.onRejectAlternative,
   });
 
   Color get _statusColor {
@@ -309,12 +313,41 @@ class AppointmentCard extends StatelessWidget {
                             color: Color(0xFFE65100),
                             fontWeight: FontWeight.w700,
                           ),
-                        ),
                       ],
                     ],
                   ],
                 ),
               ),
+              if (onAcceptAlternative != null && onRejectAlternative != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onRejectAlternative,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Reject'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onAcceptAlternative,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Accept'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ]
 
             // Request Reschedule button
