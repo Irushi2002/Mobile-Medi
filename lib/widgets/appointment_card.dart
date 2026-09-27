@@ -313,6 +313,7 @@ class AppointmentCard extends StatelessWidget {
                             color: Color(0xFFE65100),
                             fontWeight: FontWeight.w700,
                           ),
+                        ),
                       ],
                     ],
                   ],
