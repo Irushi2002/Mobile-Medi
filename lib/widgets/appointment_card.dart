@@ -6,6 +6,13 @@ import '../utils/app_colors.dart';
 class AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
   final VoidCallback? onRequestReschedule;
+  final VoidCallback? onAcceptAlternative;
+  final VoidCallback? onRejectAlternative;
+
+  const AppointmentCard({
+    super.key,
+    required this.appointment,
+    this.onRequestReschedule,
     this.onAcceptAlternative,
     this.onRejectAlternative,
   });
