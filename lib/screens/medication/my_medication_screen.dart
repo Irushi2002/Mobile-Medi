@@ -18,7 +18,9 @@ class _MyMedicationScreenState extends State<MyMedicationScreen> {
   @override
   Widget build(BuildContext context) {
     final medProvider = context.watch<MedicationProvider>();
-    final medications = medProvider.medications.where((m) => m.name.trim().isNotEmpty).toList();
+    final medications = medProvider.medications
+        .where((m) => m.name.trim().isNotEmpty && m.isActive)
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
