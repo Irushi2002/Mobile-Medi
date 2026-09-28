@@ -67,13 +67,19 @@ class MedicationModel {
     };
   }
 
+  bool get isActive {
+    if (endDate == null) return true;
+    final now = DateTime.now();
+    return endDate!.isAfter(now);
+  }
+
   bool isScheduledForDate(DateTime date) {
     final start = DateTime(startDate.year, startDate.month, startDate.day);
     final target = DateTime(date.year, date.month, date.day);
     if (target.isBefore(start)) return false;
     if (endDate != null) {
       final end = DateTime(endDate!.year, endDate!.month, endDate!.day);
-      if (target.isAfter(end)) return false;
+      if (target.isAfter(end) || target.isAtSameMomentAs(end)) return false;
     }
     return true;
   }
