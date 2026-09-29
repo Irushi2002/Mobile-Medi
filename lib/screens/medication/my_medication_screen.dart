@@ -6,6 +6,8 @@ import '../../providers/medication_provider.dart';
 import '../../models/medication_model.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/bottom_nav_bar.dart';
+import 'package:printing/printing.dart';
+import '../../services/pdf_service.dart';
 
 class MyMedicationScreen extends StatefulWidget {
   const MyMedicationScreen({super.key});
@@ -15,6 +17,7 @@ class MyMedicationScreen extends StatefulWidget {
 }
 
 class _MyMedicationScreenState extends State<MyMedicationScreen> {
+  bool _isGeneratingPdf = false;
   @override
   Widget build(BuildContext context) {
     final medProvider = context.watch<MedicationProvider>();
@@ -28,6 +31,48 @@ class _MyMedicationScreenState extends State<MyMedicationScreen> {
         title: const Text('Prescription Chart'),
         centerTitle: true,
         actions: [
+          _isGeneratingPdf
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Center(
+                      child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2))),
+                )
+              : IconButton(
+                  tooltip: 'Save or share prescription',
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  onPressed: () async {
+                    if (medications.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('No active medications to export.')),
+                      );
+                      return;
+                    }
+                    setState(() => _isGeneratingPdf = true);
+                    try {
+                      final bytes = await PdfService.generatePrescriptionPdf(
+                        medications: medications,
+                      );
+                      final dateStr =
+                          DateFormat('yyyy-MM-dd').format(DateTime.now());
+                      await Printing.sharePdf(
+                        bytes: bytes,
+                        filename: 'MediHub_Prescription_$dateStr.pdf',
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                'Unable to generate the prescription PDF. Please try again.')),
+                      );
+                    } finally {
+                      setState(() => _isGeneratingPdf = false);
+                    }
+                  },
+                ),
           IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () => Navigator.pushNamed(context, '/profile'),
@@ -129,8 +174,8 @@ class _MyMedicationScreenState extends State<MyMedicationScreen> {
         : 'Ongoing Intake';
 
     final timesStr = med.scheduledTimes
-        .map((t) => DateFormat('hh:mm a').format(
-            DateTime(2026, 1, 1, t.hour, t.minute)))
+        .map((t) => DateFormat('hh:mm a')
+            .format(DateTime(2026, 1, 1, t.hour, t.minute)))
         .join(', ');
 
     return Container(
@@ -191,15 +236,20 @@ class _MyMedicationScreenState extends State<MyMedicationScreen> {
                       const SizedBox(height: 10),
 
                       // Sig Directions
-                      _buildRowDetail(Icons.repeat_rounded, 'Sig / Frequency', med.frequency),
+                      _buildRowDetail(Icons.repeat_rounded, 'Sig / Frequency',
+                          med.frequency),
                       const SizedBox(height: 6),
-                      if (med.instructions != null && med.instructions!.isNotEmpty) ...[
-                        _buildRowDetail(Icons.info_outline_rounded, 'Directions', med.instructions!),
+                      if (med.instructions != null &&
+                          med.instructions!.isNotEmpty) ...[
+                        _buildRowDetail(Icons.info_outline_rounded,
+                            'Directions', med.instructions!),
                         const SizedBox(height: 6),
                       ],
-                      _buildRowDetail(Icons.calendar_today_outlined, 'Duration', '$startStr — $endStr'),
+                      _buildRowDetail(Icons.calendar_today_outlined, 'Duration',
+                          '$startStr — $endStr'),
                       const SizedBox(height: 6),
-                      _buildRowDetail(Icons.access_time_rounded, 'Dosing Times', timesStr),
+                      _buildRowDetail(
+                          Icons.access_time_rounded, 'Dosing Times', timesStr),
 
                       const Divider(height: 20, color: AppColors.border),
 
