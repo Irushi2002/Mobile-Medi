@@ -173,9 +173,13 @@ class MedicationCard extends StatelessWidget {
                 ),
 
                 // Mark Taken button for pending and overdue
+                // Only allow marking taken if the scheduled time has
+                // arrived (scheduledTime <= now). Future medicines
+                // must not be markable.
                 if ((status == MedicationStatus.pending ||
                     status == MedicationStatus.overdue) &&
-                    onTakeMedication != null) ...[
+                    onTakeMedication != null &&
+                    !scheduledTime.isAfter(DateTime.now())) ...[
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: onTakeMedication,
