@@ -39,6 +39,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   pdf: ^3.11.3
   printing: ^5.14.3
+  flutter_dotenv: ^6.0.1
 
 dev_dependencies:
   flutter_test:
@@ -47,3 +48,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - .env
