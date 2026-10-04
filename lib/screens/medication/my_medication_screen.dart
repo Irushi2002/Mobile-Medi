@@ -122,7 +122,7 @@ class _MyMedicationScreenState extends State<MyMedicationScreen> {
                       ),
                       const SizedBox(width: 8),
                       const Text(
-                        'ACTIVE Rx PRESCRIPTIONS',
+                        'ACTIVE PRESCRIPTIONS',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
@@ -271,7 +271,7 @@ class _MyMedicationScreenState extends State<MyMedicationScreen> {
                                   color: AppColors.stable, size: 14),
                               SizedBox(width: 4),
                               Text(
-                                'ACTIVE Rx',
+                                'ACTIVE',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,

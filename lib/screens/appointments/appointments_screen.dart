@@ -19,6 +19,8 @@ class AppointmentsScreen extends StatefulWidget {
 class _AppointmentsScreenState extends State<AppointmentsScreen> {
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
+  bool _upcomingExpanded = false;
+  bool _missedExpanded = false;
 
   List<AppointmentModel> _apptForDay(
       List<AppointmentModel> appts, DateTime day) {
@@ -248,25 +250,115 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
             ),
 
-            // ── Selected date appointments ─────────────────────────
+            // ── Appointments for selected date ──────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Icon(
+                    isSameDay(_selectedDay, DateTime.now())
+                        ? Icons.today_outlined
+                        : Icons.calendar_today_outlined,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isSameDay(_selectedDay, DateTime.now())
+                        ? "Today's Appointments"
+                        : DateFormat('MMMM d, yyyy').format(_selectedDay),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             if (_apptForDay(medProvider.appointments, _selectedDay)
-                .isNotEmpty) ...[
-              Container(
-                color: AppColors.surfaceVariant,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                .isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
+                child: Center(
+                  child: Text(
+                    isSameDay(_selectedDay, DateTime.now())
+                        ? 'No appointments for today.'
+                        : 'No appointments for this date.',
+                    style: const TextStyle(color: AppColors.textHint),
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _apptForDay(
+                          medProvider.appointments, _selectedDay)
+                      .map((a) => AppointmentCard(
+                    appointment: a,
+                    onRequestReschedule: () =>
+                        _startRescheduleFlow(context, a),
+                    onAcceptAlternative: () =>
+                        _handleAlternativeReply(context, a, 'accept'),
+                    onRejectAlternative: () =>
+                        _handleAlternativeReply(context, a, 'reject'),
+                  ))
+                      .toList(),
+                ),
+              ),
+
+
+            // ── Upcoming Appointments (collapsible) ───────────────
+            GestureDetector(
+              onTap: () => setState(() {
+                _upcomingExpanded = !_upcomingExpanded;
+              }),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
                   children: [
+                    const Icon(Icons.upcoming_outlined,
+                        color: AppColors.upcoming, size: 18),
+                    const SizedBox(width: 8),
                     Text(
-                      DateFormat('MMMM d, yyyy').format(_selectedDay),
+                      'Upcoming Appointments (${medProvider.upcomingAppointments.length})',
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    ..._apptForDay(medProvider.appointments, _selectedDay)
+                    const SizedBox(width: 4),
+                    Icon(
+                      _upcomingExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            if (_upcomingExpanded) ...[
+              if (medProvider.upcomingAppointments.isEmpty)
+                const Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Center(
+                    child: Text('No upcoming appointments',
+                        style: TextStyle(color: AppColors.textHint)),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: medProvider.upcomingAppointments
                         .map((a) => AppointmentCard(
                       appointment: a,
                       onRequestReschedule: () =>
@@ -275,110 +367,80 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                           _handleAlternativeReply(context, a, 'accept'),
                       onRejectAlternative: () =>
                           _handleAlternativeReply(context, a, 'reject'),
-                    )),
+                    ))
+                        .toList(),
+                  ),
+                ),
+            ],
+
+            // ── Missed Appointments (collapsible) ─────────────────
+            GestureDetector(
+              onTap: () => setState(() {
+                _missedExpanded = !_missedExpanded;
+              }),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.cancel_outlined,
+                        color: AppColors.missed, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Missed Appointments (${medProvider.missedAppointments.length})',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _missedExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
                   ],
                 ),
               ),
-            ],
-
-            // ── Upcoming Appointments ──────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.upcoming_outlined,
-                      color: AppColors.upcoming, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Upcoming (${medProvider.upcomingAppointments.length})',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
             ),
 
-            if (medProvider.upcomingAppointments.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Center(
-                  child: Text('No upcoming appointments',
-                      style: TextStyle(color: AppColors.textHint)),
-                ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: medProvider.upcomingAppointments
-                      .map((a) => AppointmentCard(
-                    appointment: a,
-                    onRequestReschedule: () =>
-                        _startRescheduleFlow(context, a),
-                    onAcceptAlternative: () =>
-                        _handleAlternativeReply(context, a, 'accept'),
-                    onRejectAlternative: () =>
-                        _handleAlternativeReply(context, a, 'reject'),
-                  ))
-                      .toList(),
-                ),
-              ),
-
-            // ── Missed Appointments ────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.cancel_outlined,
-                      color: AppColors.missed, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Missed (${medProvider.missedAppointments.length})',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+            if (_missedExpanded) ...[
+              if (medProvider.missedAppointments.isEmpty)
+                const Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.check_circle_outline,
+                            size: 36, color: AppColors.stable),
+                        SizedBox(height: 8),
+                        Text('No missed appointments!',
+                            style: TextStyle(color: AppColors.textHint)),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            if (medProvider.missedAppointments.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Center(
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                   child: Column(
-                    children: [
-                      Icon(Icons.check_circle_outline,
-                          size: 36, color: AppColors.stable),
-                      SizedBox(height: 8),
-                      Text('No missed appointments!',
-                          style: TextStyle(color: AppColors.textHint)),
-                    ],
+                    children: medProvider.missedAppointments
+                        .map((a) => AppointmentCard(
+                      appointment: a,
+                      onRequestReschedule: () =>
+                          _startRescheduleFlow(context, a),
+                      onAcceptAlternative: () =>
+                          _handleAlternativeReply(context, a, 'accept'),
+                      onRejectAlternative: () =>
+                          _handleAlternativeReply(context, a, 'reject'),
+                    ))
+                        .toList(),
                   ),
                 ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                child: Column(
-                  children: medProvider.missedAppointments
-                      .map((a) => AppointmentCard(
-                    appointment: a,
-                    onRequestReschedule: () =>
-                        _startRescheduleFlow(context, a),
-                    onAcceptAlternative: () =>
-                        _handleAlternativeReply(context, a, 'accept'),
-                    onRejectAlternative: () =>
-                        _handleAlternativeReply(context, a, 'reject'),
-                  ))
-                      .toList(),
-                ),
-              ),
+            ],
 
             const SizedBox(height: 20),
           ],
