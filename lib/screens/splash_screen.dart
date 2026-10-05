@@ -16,6 +16,9 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  AuthProvider? _authProvider;
+  bool _minimumDurationElapsed = false;
+  bool _navigationHandled = false;
 
   @override
   void initState() {
@@ -28,18 +31,34 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _controller,
       curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
     ));
-    _scaleAnimation =
-        Tween<double>(begin: 0.8, end: 1).animate(CurvedAnimation(
-          parent: _controller,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-        ));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
     _controller.forward();
-    Future.delayed(const Duration(seconds: 2), _navigate);
+    Future.delayed(const Duration(seconds: 2), () {
+      _minimumDurationElapsed = true;
+      _navigateWhenReady();
+    });
   }
 
-  void _navigate() {
-    if (!mounted) return;
-    final authProvider = context.read<AuthProvider>();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _authProvider ??= context.read<AuthProvider>()
+      ..addListener(_navigateWhenReady);
+    _navigateWhenReady();
+  }
+
+  void _navigateWhenReady() {
+    if (!mounted || !_minimumDurationElapsed || _navigationHandled) return;
+    final authProvider = _authProvider!;
+    if (authProvider.status == AuthStatus.initial ||
+        authProvider.status == AuthStatus.loading) {
+      return;
+    }
+
+    _navigationHandled = true;
     if (authProvider.status == AuthStatus.authenticated) {
       if (authProvider.needsPrivacyAccept) {
         Navigator.pushReplacementNamed(context, AppRouter.privacyPolicy);
@@ -53,6 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _authProvider?.removeListener(_navigateWhenReady);
     _controller.dispose();
     super.dispose();
   }

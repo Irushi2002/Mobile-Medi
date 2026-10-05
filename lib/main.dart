@@ -11,9 +11,11 @@ import 'providers/settings_provider.dart';
 import 'routes/app_router.dart';
 import 'services/notification_service.dart';
 import 'utils/app_theme.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp();
 
   // Initialize timezone database and set device local timezone

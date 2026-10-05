@@ -26,16 +26,17 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       List<AppointmentModel> appts, DateTime day) {
     return appts
         .where((a) =>
-    a.dateTime.year == day.year &&
-        a.dateTime.month == day.month &&
-        a.dateTime.day == day.day)
+            a.dateTime.year == day.year &&
+            a.dateTime.month == day.month &&
+            a.dateTime.day == day.day)
         .toList();
   }
 
   // ── Slot-Picker Reschedule Flow ──────────────────────────────────────────
 
   /// Step 1 — Fetch available slots, then show the date+slot picker sheet.
-  Future<void> _handleAlternativeReply(BuildContext context, AppointmentModel appointment, String action) async {
+  Future<void> _handleAlternativeReply(
+      BuildContext context, AppointmentModel appointment, String action) async {
     final uid = context.read<AuthProvider>().user?.uid;
     if (uid == null) return;
 
@@ -54,7 +55,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       Navigator.pop(context); // Close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Successfully updated appointment' : 'Failed to process request'),
+          content: Text(success
+              ? 'Successfully updated appointment'
+              : 'Failed to process request'),
           backgroundColor: success ? AppColors.stable : AppColors.missed,
         ),
       );
@@ -88,7 +91,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
                 Text('Loading available slots…',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -119,11 +123,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   }
 
   /// Step 2 — Show a bottom sheet: pick a date → pick a time slot → enter reason.
-  void _showSlotPickerSheet(
-      BuildContext context,
-      AppointmentModel appointment,
-      String uid,
-      List<Map<String, String>> slots) {
+  void _showSlotPickerSheet(BuildContext context, AppointmentModel appointment,
+      String uid, List<Map<String, String>> slots) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -153,8 +154,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           } else {
             messenger.showSnackBar(
               const SnackBar(
-                content: Text(
-                    'Request submitted, but could not reach the server. '
+                content:
+                    Text('Request submitted, but could not reach the server. '
                         'Please check your connection.'),
                 backgroundColor: AppColors.warning,
               ),
@@ -212,11 +213,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 ),
                 calendarStyle: const CalendarStyle(
                   selectedDecoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle),
+                      color: AppColors.primary, shape: BoxShape.circle),
                   todayDecoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      shape: BoxShape.circle),
+                      color: AppColors.primaryLight, shape: BoxShape.circle),
                   markerDecoration: BoxDecoration(
                     color: AppColors.upcoming,
                     shape: BoxShape.circle,
@@ -229,17 +228,15 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: appts.take(3).map((a) {
-                        final color =
-                        a.status == AppointmentStatus.upcoming
+                        final color = a.status == AppointmentStatus.upcoming
                             ? AppColors.upcoming
                             : a.status == AppointmentStatus.completed
-                            ? AppColors.completed
-                            : AppColors.missed;
+                                ? AppColors.completed
+                                : AppColors.missed;
                         return Container(
                           width: 5,
                           height: 5,
-                          margin:
-                          const EdgeInsets.symmetric(horizontal: 1),
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
                           decoration: BoxDecoration(
                               color: color, shape: BoxShape.circle),
                         );
@@ -277,11 +274,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
             ),
 
-            if (_apptForDay(medProvider.appointments, _selectedDay)
-                .isEmpty)
+            if (_apptForDay(medProvider.appointments, _selectedDay).isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Center(
                   child: Text(
                     isSameDay(_selectedDay, DateTime.now())
@@ -295,21 +291,19 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  children: _apptForDay(
-                          medProvider.appointments, _selectedDay)
+                  children: _apptForDay(medProvider.appointments, _selectedDay)
                       .map((a) => AppointmentCard(
-                    appointment: a,
-                    onRequestReschedule: () =>
-                        _startRescheduleFlow(context, a),
-                    onAcceptAlternative: () =>
-                        _handleAlternativeReply(context, a, 'accept'),
-                    onRejectAlternative: () =>
-                        _handleAlternativeReply(context, a, 'reject'),
-                  ))
+                            appointment: a,
+                            onRequestReschedule: () =>
+                                _startRescheduleFlow(context, a),
+                            onAcceptAlternative: () =>
+                                _handleAlternativeReply(context, a, 'accept'),
+                            onRejectAlternative: () =>
+                                _handleAlternativeReply(context, a, 'reject'),
+                          ))
                       .toList(),
                 ),
               ),
-
 
             // ── Upcoming Appointments (collapsible) ───────────────
             GestureDetector(
@@ -347,8 +341,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             if (_upcomingExpanded) ...[
               if (medProvider.upcomingAppointments.isEmpty)
                 const Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Center(
                     child: Text('No upcoming appointments',
                         style: TextStyle(color: AppColors.textHint)),
@@ -360,14 +353,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   child: Column(
                     children: medProvider.upcomingAppointments
                         .map((a) => AppointmentCard(
-                      appointment: a,
-                      onRequestReschedule: () =>
-                          _startRescheduleFlow(context, a),
-                      onAcceptAlternative: () =>
-                          _handleAlternativeReply(context, a, 'accept'),
-                      onRejectAlternative: () =>
-                          _handleAlternativeReply(context, a, 'reject'),
-                    ))
+                              appointment: a,
+                              onRequestReschedule: () =>
+                                  _startRescheduleFlow(context, a),
+                              onAcceptAlternative: () =>
+                                  _handleAlternativeReply(context, a, 'accept'),
+                              onRejectAlternative: () =>
+                                  _handleAlternativeReply(context, a, 'reject'),
+                            ))
                         .toList(),
                   ),
                 ),
@@ -409,8 +402,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             if (_missedExpanded) ...[
               if (medProvider.missedAppointments.isEmpty)
                 const Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Center(
                     child: Column(
                       children: [
@@ -429,14 +421,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   child: Column(
                     children: medProvider.missedAppointments
                         .map((a) => AppointmentCard(
-                      appointment: a,
-                      onRequestReschedule: () =>
-                          _startRescheduleFlow(context, a),
-                      onAcceptAlternative: () =>
-                          _handleAlternativeReply(context, a, 'accept'),
-                      onRejectAlternative: () =>
-                          _handleAlternativeReply(context, a, 'reject'),
-                    ))
+                              appointment: a,
+                              onRequestReschedule: () =>
+                                  _startRescheduleFlow(context, a),
+                              onAcceptAlternative: () =>
+                                  _handleAlternativeReply(context, a, 'accept'),
+                              onRejectAlternative: () =>
+                                  _handleAlternativeReply(context, a, 'reject'),
+                            ))
                         .toList(),
                   ),
                 ),
@@ -458,8 +450,7 @@ class _RescheduleSheet extends StatefulWidget {
   final AppointmentModel appointment;
   final String uid;
   final List<Map<String, String>> slots;
-  final Future<void> Function(
-      String date, String time, String reason) onSubmit;
+  final Future<void> Function(String date, String time, String reason) onSubmit;
 
   const _RescheduleSheet({
     required this.appointment,
@@ -490,15 +481,24 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
   // Group slots by date
   Map<String, List<String>> get _slotsByDate {
     final map = <String, List<String>>{};
+    final now = DateTime.now();
     for (final s in widget.slots) {
+      final date = DateTime.tryParse(s['date']!);
+      final timeParts = s['time']!.split(':');
+      if (date == null || timeParts.length < 2) continue;
+      final hour = int.tryParse(timeParts[0]);
+      final minute = int.tryParse(timeParts[1]);
+      if (hour == null || minute == null) continue;
+      final slotDateTime =
+          DateTime(date.year, date.month, date.day, hour, minute);
+      if (!slotDateTime.isAfter(now)) continue;
       map.putIfAbsent(s['date']!, () => []).add(s['time']!);
     }
     return map;
   }
 
   // Distinct sorted dates that have available slots
-  List<String> get _availableDates =>
-      _slotsByDate.keys.toList()..sort();
+  List<String> get _availableDates => _slotsByDate.keys.toList()..sort();
 
   // Time slots for the currently selected date
   List<String> get _timesForSelectedDate =>
@@ -610,8 +610,8 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                   Expanded(
                     child: Text(
                       'Current: ${widget.appointment.clinic} — '
-                          '${DateFormat('MMM d, yyyy').format(widget.appointment.dateTime)} '
-                          'at ${DateFormat('hh:mm a').format(widget.appointment.dateTime)}',
+                      '${DateFormat('MMM d, yyyy').format(widget.appointment.dateTime)} '
+                      'at ${DateFormat('hh:mm a').format(widget.appointment.dateTime)}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -641,7 +641,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
 
   // ── Step 0: Date + time slot picker ─────────────────────────────────────
   Widget _buildSlotPickerStep(ScrollController scrollController) {
-    if (widget.slots.isEmpty) {
+    if (_availableDates.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -662,7 +662,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
               const SizedBox(height: 8),
               const Text(
                 'The doctor has no free upcoming time slots at the moment. '
-                    'Please contact the clinic directly.',
+                'Please contact the clinic directly.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -705,7 +705,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
               }),
               child: Container(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primary : AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
@@ -743,8 +743,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
           if (_timesForSelectedDate.isEmpty)
             const Text(
               'No slots available for this date.',
-              style:
-              TextStyle(fontSize: 13, color: AppColors.textHint),
+              style: TextStyle(fontSize: 13, color: AppColors.textHint),
             )
           else
             Wrap(
@@ -755,17 +754,14 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                 return GestureDetector(
                   onTap: () => setState(() => _selectedTime = time),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.surface,
+                      color: isSelected ? AppColors.primary : AppColors.surface,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.border,
+                        color:
+                            isSelected ? AppColors.primary : AppColors.border,
                         width: isSelected ? 1.5 : 1,
                       ),
                     ),
@@ -774,9 +770,8 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.textPrimary,
+                        color:
+                            isSelected ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -854,9 +849,9 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
             autofocus: true,
             decoration: InputDecoration(
               hintText:
-              'Please explain why you need to reschedule this appointment…',
-              hintStyle: const TextStyle(
-                  color: AppColors.textHint, fontSize: 13),
+                  'Please explain why you need to reschedule this appointment…',
+              hintStyle:
+                  const TextStyle(color: AppColors.textHint, fontSize: 13),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: AppColors.border),
@@ -868,9 +863,9 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
           const SizedBox(height: 8),
           const Text(
             'Your request will be reviewed by staff. The appointment will '
-                'only be changed after approval.',
-            style: TextStyle(
-                fontSize: 11, color: AppColors.textHint, height: 1.5),
+            'only be changed after approval.',
+            style:
+                TextStyle(fontSize: 11, color: AppColors.textHint, height: 1.5),
           ),
         ],
       ),
@@ -890,9 +885,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
           if (_step == 1)
             Expanded(
               child: OutlinedButton(
-                onPressed: _submitting
-                    ? null
-                    : () => setState(() => _step = 0),
+                onPressed: _submitting ? null : () => setState(() => _step = 0),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.textSecondary,
                   side: const BorderSide(color: AppColors.border),
@@ -910,10 +903,10 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
               onPressed: _submitting
                   ? null
                   : _step == 0
-                  ? (_selectedDate != null && _selectedTime != null
-                  ? () => setState(() => _step = 1)
-                  : null)
-                  : _submit,
+                      ? (_selectedDate != null && _selectedTime != null
+                          ? () => setState(() => _step = 1)
+                          : null)
+                      : _submit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -921,16 +914,16 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
-                textStyle: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600),
+                textStyle:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               child: _submitting
                   ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
-              )
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
                   : Text(_step == 0 ? 'Next: Add Reason' : 'Submit Request'),
             ),
           ),
@@ -939,4 +932,3 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
     );
   }
 }
-
