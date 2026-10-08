@@ -9,7 +9,9 @@ AppointmentStatus _parseStatus(dynamic rawStatus, DateTime dateTime) {
     return AppointmentStatus.missed;
   }
   if (status == 'upcoming' || status == 'confirmed') {
-    return AppointmentStatus.upcoming;
+    return dateTime.isBefore(DateTime.now())
+        ? AppointmentStatus.missed
+        : AppointmentStatus.upcoming;
   }
   if (status == 'pending') {
     return dateTime.isBefore(DateTime.now())
