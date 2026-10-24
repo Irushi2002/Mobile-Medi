@@ -681,7 +681,7 @@ class _QuickActionCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
@@ -699,14 +699,22 @@ class _QuickActionCard extends StatelessWidget {
                 child: Icon(icon, color: color, size: 20),
               ),
               const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                  height: 1.3,
+              SizedBox(
+                height: 30,
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

@@ -57,12 +57,19 @@ class AppBottomNavBar extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        item.label,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isActive ? AppColors.primary : AppColors.textHint,
-                          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            item.label,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isActive ? AppColors.primary : AppColors.textHint,
+                              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
                         ),
                       ),
                     ],
