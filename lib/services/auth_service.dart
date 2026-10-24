@@ -13,6 +13,7 @@ class AuthService {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    signInOption: SignInOption.standard,
   );
 
   User? get currentUser => _auth.currentUser;

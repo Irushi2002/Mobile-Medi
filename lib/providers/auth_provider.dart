@@ -19,6 +19,15 @@ class AuthProvider extends ChangeNotifier {
   bool get needsPrivacyAccept => _user != null && !_user!.privacyAccepted;
 
   AuthProvider() {
+    // Synchronously pre-seed the status using the cached Firebase user.
+    // FirebaseAuth.instance.currentUser is available immediately from
+    // the on-disk token cache — no network call needed.
+    // This ensures the splash screen always sees `loading` (not `initial`
+    // or `unauthenticated`) when a previous session exists, preventing the
+    // race condition that was sending logged-in users to the login page.
+    if (_authService.currentUser != null) {
+      _status = AuthStatus.loading;
+    }
     _authService.authStateChanges.listen(_onAuthStateChanged);
   }
 
