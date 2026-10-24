@@ -1,29 +1,5 @@
 enum AppointmentStatus { upcoming, completed, missed }
 
-AppointmentStatus _parseStatus(dynamic rawStatus, DateTime dateTime) {
-  final status = rawStatus?.toString().trim().toLowerCase();
-  if (status == 'completed' || status == 'attended') {
-    return AppointmentStatus.completed;
-  }
-  if (status == 'missed' || status == 'cancelled') {
-    return AppointmentStatus.missed;
-  }
-  if (status == 'upcoming' || status == 'confirmed') {
-    return AppointmentStatus.upcoming;
-  }
-  if (status == 'pending') {
-    return dateTime.isBefore(DateTime.now())
-        ? AppointmentStatus.missed
-        : AppointmentStatus.upcoming;
-  }
-
-  // Legacy or partially written Firestore documents may omit status. A
-  // timestamp in the past is unambiguous: it cannot still be upcoming.
-  return dateTime.isBefore(DateTime.now())
-      ? AppointmentStatus.missed
-      : AppointmentStatus.upcoming;
-}
-
 /// Patient-side reschedule status — mirrors what the server stores in Firestore
 enum RescheduleStatus {
   none,
@@ -46,13 +22,10 @@ class AppointmentModel {
   final DateTime? rescheduleRequestedAt;
   final DateTime? newDateTime;
   final String? rescheduleNote;
-
   /// Message sent by staff (approval confirmation / rejection reason / alternative suggestion)
   final String? staffMessage;
-
   /// Suggested date string from staff (for alternativeSuggested status)
   final String? suggestedDate;
-
   /// Suggested time string from staff (for alternativeSuggested status)
   final String? suggestedTime;
   // Investigation fields from doctor/website
@@ -107,15 +80,14 @@ class AppointmentModel {
         return name;
       }(),
       requestDetails: map['requestDetails'] ?? '',
-      status: _parseStatus(
-        map['status'],
-        DateTime.fromMillisecondsSinceEpoch(map['dateTime'] as int),
+      status: AppointmentStatus.values.firstWhere(
+            (e) => e.name == map['status'],
+        orElse: () => AppointmentStatus.upcoming,
       ),
-      rescheduleStatus:
-          parseRescheduleStatus(map['rescheduleStatus'] as String?),
+      rescheduleStatus: parseRescheduleStatus(map['rescheduleStatus'] as String?),
       rescheduleRequestedAt: map['rescheduleRequestedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(
-              map['rescheduleRequestedAt'] as int)
+          map['rescheduleRequestedAt'] as int)
           : null,
       newDateTime: map['newDateTime'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['newDateTime'] as int)
@@ -124,7 +96,8 @@ class AppointmentModel {
       staffMessage: map['staffMessage'],
       suggestedDate: map['suggestedDate'],
       suggestedTime: map['suggestedTime'],
-      investigations: List<String>.from(map['investigations'] ?? []),
+      investigations:
+      List<String>.from(map['investigations'] ?? []),
       investigationNotes: map['investigationNotes'],
     );
   }
